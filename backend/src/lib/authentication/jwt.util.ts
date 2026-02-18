@@ -1,18 +1,29 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import config from "../../config/env.config";
+import { env } from "../../config/environments";
 
-export const generateAccessToken = (payload: object) => {
-  return jwt.sign(payload, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
+type JwtExpires = jwt.SignOptions["expiresIn"];
+
+export interface TokenPayload extends JwtPayload {
+  userId: string;
+  email: string;
+}
+
+export const generateAccessToken = (payload: TokenPayload) => {
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN as JwtExpires,
   });
 };
 
-export const generateRefreshToken = (payload: object) => {
-  return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn,
+export const generateRefreshToken = (payload: TokenPayload) => {
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN as JwtExpires,
   });
 };
 
-export const verifyAccessToken = (token: string): JwtPayload => {
-  return jwt.verify(token, config.jwt.secret) as JwtPayload;
+export const verifyAccessToken = (token: string): TokenPayload => {
+  try {
+    return jwt.verify(token, env.JWT_SECRET) as TokenPayload;
+  } catch {
+    throw new Error("Invalid or expired access token");
+  }
 };

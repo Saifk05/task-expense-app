@@ -1,19 +1,27 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../authentication/jwt.util";
+import { verifyAccessToken, TokenPayload } from "../authentication/jwt.util";
+import { AppError } from "../errors/app-error";
+import { ErrorCode } from "../errors/error-codes";
 
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: TokenPayload;
 }
 
 const authMiddleware = (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return next(
+      new AppError(
+        "Authentication token missing",
+        401,
+        ErrorCode.UNAUTHORIZED
+      )
+    );
   }
 
   const token = authHeader.split(" ")[1];
@@ -22,8 +30,14 @@ const authMiddleware = (
     const decoded = verifyAccessToken(token);
     req.user = decoded;
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+  } catch {
+    return next(
+      new AppError(
+        "Invalid or expired token",
+        401,
+        ErrorCode.UNAUTHORIZED
+      )
+    );
   }
 };
 

@@ -3,8 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 
-import config from "./config/env.config";
-import { connectDB } from "./init/db.init";
+import { env } from "./config/environments";
 import routerInit from "./init/router.init";
 import logger from "./lib/logger";
 import errorHandler from "./lib/errors/error-handler";
@@ -48,7 +47,7 @@ app.use("/v1/api", routerInit);
  */
 app.use(errorHandler);
 
-const port = Number(config.servicePort) || 5000;
+const port = env.PORT;
 const server = http.createServer(app);
 
 /**
@@ -57,21 +56,17 @@ const server = http.createServer(app);
  * -------------------------
  */
 server.on("error", (error: any) => {
-  if (error.syscall !== "listen") {
-    throw error;
-  }
+  if (error.syscall !== "listen") throw error;
 
-  const bind = typeof port === "string" ? `Pipe ${port}` : `Port ${port}`;
+  const bind = `Port ${port}`;
 
   switch (error.code) {
     case "EADDRINUSE":
       logger.error(`${bind} is already in use`);
       process.exit(1);
-      break;
     case "EACCES":
       logger.error(`${bind} requires elevated privileges`);
       process.exit(1);
-      break;
     default:
       throw error;
   }
@@ -86,14 +81,6 @@ server.on("listening", () => {
  * Bootstrap Application
  * -------------------------
  */
-(async () => {
-  try {
-    await connectDB();
-    server.listen(port);
-  } catch (err: any) {
-    logger.error(`Server startup failed: ${err.message}`);
-    process.exit(1);
-  }
-})();
+server.listen(port);
 
 export default app;
