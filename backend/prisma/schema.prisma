@@ -7,13 +7,14 @@
 
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 model User {
   id        String   @id @default(uuid())
@@ -39,6 +40,8 @@ model User {
   lockUntil                DateTime?
 
   profilePictureUrl String?
+  profilePictureId  String? 
+  
   isActive          Boolean @default(true)
   tasks Task[]
   accounts Account[]

@@ -1,4 +1,12 @@
-    export const connectDB = async () => {
-    console.log("Database connection placeholder...");
-    };
-    // In a real application, you would replace the above placeholder with actual database connection logic.    
+import { prisma } from "./prisma.init";
+import logger from "../lib/logger";
+
+export const connectDB = async () => {
+  try {
+    await prisma.$connect();
+    logger.info("Database connected successfully");
+  } catch (error) {
+    logger.error("Database connection failed");
+    process.exit(1);
+  }
+};

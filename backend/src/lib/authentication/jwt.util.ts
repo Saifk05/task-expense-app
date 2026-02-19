@@ -20,6 +20,15 @@ export const generateRefreshToken = (payload: TokenPayload) => {
   });
 };
 
+export const verifyRefreshToken = (token: string): TokenPayload => {
+  try {
+    return jwt.verify(token, env.JWT_REFRESH_SECRET) as TokenPayload;
+  } catch {
+    throw new Error("Invalid or expired refresh token");
+  }
+};
+
+
 export const verifyAccessToken = (token: string): TokenPayload => {
   try {
     return jwt.verify(token, env.JWT_SECRET) as TokenPayload;
