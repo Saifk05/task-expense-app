@@ -8,20 +8,72 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ApiService } from "../../services/api.service";
+import { showSuccess, showError } from "../../utils/notification.util";
 
-const LoginScreen = ({ navigation }: any) => {
+const LoginScreen = ({ navigation, setIsLoggedIn }: any) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secure, setSecure] = useState(true);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const validateForm = () => {
+    if (!email.trim()) {
+      showError("Email is required");
+      return false;
+    }
+
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email.trim())) {
+      showError("Please enter a valid email");
+      return false;
+    }
+
+    if (!password) {
+      showError("Password is required");
+      return false;
+    }
+
+    return true;
+  };
+
+const handleLogin = async () => {
+  if (!validateForm()) return;
+
+  try {
+    setLoading(true);
+
+    await ApiService.login(email.trim(), password);
+
+    showSuccess("Login successful");
+
+    // Just update auth state
+    setIsLoggedIn(true);
+
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Something went wrong";
+
+    showError(message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={["#2563EB", "#06B6D4"]}
+        colors={["#3985f7", "#5aa9ff"]}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>
@@ -36,7 +88,7 @@ const LoginScreen = ({ navigation }: any) => {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.card}
       >
-        {/* Toggle Tabs */}
+        {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity style={styles.activeTab}>
             <Text style={styles.activeTabText}>Sign In</Text>
@@ -57,9 +109,11 @@ const LoginScreen = ({ navigation }: any) => {
           placeholderTextColor="#9CA3AF"
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
 
-        {/* Password with show/hide */}
+        {/* Password */}
         <View style={styles.passwordContainer}>
           <TextInput
             placeholder="Password"
@@ -69,7 +123,6 @@ const LoginScreen = ({ navigation }: any) => {
             value={password}
             onChangeText={setPassword}
           />
-
           <TouchableOpacity onPress={() => setSecure(!secure)}>
             <Ionicons
               name={secure ? "eye-off-outline" : "eye-outline"}
@@ -79,14 +132,14 @@ const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Remember Me */}
+        {/* Remember */}
         <View style={styles.rememberRow}>
           <TouchableOpacity
             style={styles.checkbox}
             onPress={() => setRemember(!remember)}
           >
             {remember && (
-              <Ionicons name="checkmark" size={16} color="#2563EB" />
+              <Ionicons name="checkmark" size={16} color="#3985f7" />
             )}
           </TouchableOpacity>
 
@@ -97,13 +150,25 @@ const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Sign In Button */}
+        {/* Login Button */}
         <LinearGradient
-          colors={["#2563EB", "#06B6D4"]}
+          colors={
+            loading
+              ? ["#9CA3AF", "#9CA3AF"]
+              : ["#3985f7", "#5aa9ff"]
+          }
           style={styles.button}
         >
-          <TouchableOpacity style={{ width: "100%" }}>
-            <Text style={styles.buttonText}>Sign In</Text>
+          <TouchableOpacity
+            style={{ width: "100%", alignItems: "center" }}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
         </LinearGradient>
 
@@ -114,11 +179,15 @@ const LoginScreen = ({ navigation }: any) => {
           <View style={styles.line} />
         </View>
 
-        {/* Social Buttons */}
+        {/* Social */}
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialButton}>
-            <AntDesign name="google" size={20} color="#EA4335" />
-            <Text style={styles.socialText}>Google</Text>
+            <Image
+              source={require("../../../assets/google-logo.png")}
+              style={styles.googleIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.googleText}>Google</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.socialButton}>
@@ -166,8 +235,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
 
-  /* ===== Improved Segmented Control ===== */
-
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "#E5E7EB",
@@ -182,11 +249,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 26,
     alignItems: "center",
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
   },
 
   inactiveTab: {
@@ -204,8 +266,6 @@ const styles = StyleSheet.create({
   inactiveTabText: {
     color: "#6B7280",
   },
-
-  /* ===== Inputs ===== */
 
   input: {
     backgroundColor: "#F9FAFB",
@@ -228,8 +288,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
-
-  /* ===== Remember Row ===== */
 
   rememberRow: {
     flexDirection: "row",
@@ -254,11 +312,9 @@ const styles = StyleSheet.create({
   },
 
   forgotText: {
-    color: "#2563EB",
+    color: "#3985f7",
     fontSize: 14,
   },
-
-  /* ===== Button ===== */
 
   button: {
     borderRadius: 14,
@@ -271,10 +327,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
-    textAlign: "center",
   },
-
-  /* ===== Divider ===== */
 
   dividerRow: {
     flexDirection: "row",
@@ -294,8 +347,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  /* ===== Social Buttons ===== */
-
   socialRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -304,21 +355,31 @@ const styles = StyleSheet.create({
   socialButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     flex: 0.48,
-    justifyContent: "center",
+  },
+
+  googleIcon: {
+    width: 22,
+    height: 22,
+  },
+
+  googleText: {
+    marginLeft: 10,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
   },
 
   socialText: {
     marginLeft: 8,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
     color: "#111827",
   },
 });
-
