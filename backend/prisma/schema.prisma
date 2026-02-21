@@ -66,11 +66,14 @@ model Task {
   title       String
   description String?
 
-  status      TaskStatus  @default(PENDING)
+  status      TaskStatus   @default(PENDING)
   priority    TaskPriority @default(MEDIUM)
 
-  dueDate     DateTime?
+  startDate   DateTime
+  dueDate     DateTime
+
   cancelledReason String?
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,8 +83,8 @@ model Task {
   @@index([userId])
   @@index([userId, status])
   @@index([userId, dueDate])
+  @@index([userId, startDate])
 }
-
 
 model Account {
   id       String   @id @default(uuid())
@@ -193,7 +196,6 @@ model Notification {
 
   title     String
   message   String
-
   type      NotificationType
 
   isRead    Boolean  @default(false)
@@ -206,6 +208,9 @@ model Notification {
 
   relatedBudgetId       String?
   relatedTransactionId  String?
+  relatedTaskId         String?
+
+  task Task? @relation(fields: [relatedTaskId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -215,12 +220,19 @@ model Notification {
   @@index([isRead])
   @@index([isSent])
   @@index([type])
+  @@index([relatedTaskId])
 }
 
 enum NotificationType {
   BUDGET_WARNING
   BUDGET_EXCEEDED
   TRANSACTION_ALERT
+
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_COMPLETED
+  TASK_OVERDUE
+  
   SYSTEM
 }
 
@@ -258,7 +270,6 @@ enum TaskStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-  OVERDUE
 }
 
 enum TaskPriority {
