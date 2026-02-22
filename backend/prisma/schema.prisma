@@ -44,6 +44,8 @@ model User {
   
   isActive          Boolean @default(true)
   tasks Task[]
+  taskCategories TaskCategory[]
+  
   accounts Account[]
   transactions Transaction[]
   budgets       Budget[]
@@ -72,6 +74,7 @@ model Task {
   startDate   DateTime
   dueDate     DateTime
 
+  categoryId String?
   cancelledReason String?
   notifications Notification[]
 
@@ -79,11 +82,36 @@ model Task {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
+  @@index([categoryId])
   @@index([userId])
   @@index([userId, status])
   @@index([userId, dueDate])
   @@index([userId, startDate])
+}
+
+model TaskCategory {
+  id        String   @id @default(uuid())
+  userId    String
+
+  name      String
+  parentId  String?   // null = main category
+
+  parent    TaskCategory?  @relation("TaskCategoryHierarchy", fields: [parentId], references: [id])
+  children  TaskCategory[] @relation("TaskCategoryHierarchy")
+
+  tasks     Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([parentId])
+
+  @@unique([userId, name, parentId]) //  Prevent duplicate sibling categories
 }
 
 model Account {

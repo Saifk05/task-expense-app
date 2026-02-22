@@ -4,6 +4,7 @@ import { TaskService } from "./task.service";
 import { createTaskSchema } from "./task.validation";
 import { updateTaskSchema } from "./task.validation";
 import { getTasksSchema } from "./task.validation";
+import { createTaskCategorySchema } from "./task.validation";
 
 export class TaskController {
   private taskService: TaskService;
@@ -84,6 +85,7 @@ getTasks = async (
       cursor: parsed.cursor,
       status: parsed.status,
       priority: parsed.priority,
+      categoryId: parsed.categoryId,   // ✅ ADD THIS
       startFrom: parsed.startFrom,
       startTo: parsed.startTo,
       dueFrom: parsed.dueFrom,
@@ -98,5 +100,48 @@ getTasks = async (
     next(error);
   }
 };
+
+createTaskCategory = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const parsed = createTaskCategorySchema.parse(req.body);
+
+    const category = await this.taskService.createTaskCategory({
+      userId: req.user!.userId,
+      name: parsed.name,
+      parentId: parsed.parentId ?? null,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: category,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+getTaskCategories = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const categories = await this.taskService.getTaskCategories(
+      req.user!.userId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 }

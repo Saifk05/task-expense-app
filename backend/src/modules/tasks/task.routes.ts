@@ -18,4 +18,8 @@ router.patch("/task/:id", taskController.updateTask);
 
 router.get("/task", taskController.getTasks);
 
+router.post("/task/category", taskController.createTaskCategory);
+
+router.get("/task/category", taskController.getTaskCategories);
+
 export default router;

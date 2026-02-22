@@ -83,6 +83,7 @@ async getTasks(input: {
   cursor?: string;
   status?: TaskStatus | "OVERDUE";
   priority?: TaskPriority;
+  categoryId?: string;        // ✅ ADD THIS
   startFrom?: string;
   startTo?: string;
   dueFrom?: string;
@@ -96,6 +97,16 @@ async getTasks(input: {
   const filters: any = {
     userId: input.userId,
   };
+
+  /*
+   =====================================
+   CATEGORY FILTER
+   =====================================
+  */
+
+  if (input.categoryId) {
+    filters.categoryId = input.categoryId;
+  }
 
   /*
    =====================================
@@ -156,7 +167,7 @@ async getTasks(input: {
 
   if (input.dueFrom || input.dueTo) {
     filters.dueDate = {
-      ...(filters.dueDate || {}), // 👈 keeps overdue condition if present
+      ...(filters.dueDate || {}), // keeps overdue condition if present
     };
 
     if (input.dueFrom) {
@@ -173,5 +184,16 @@ async getTasks(input: {
     limit: input.limit,
     cursor: input.cursor,
   });
+}
+async createTaskCategory(input: {
+  userId: string;
+  name: string;
+  parentId?: string | null;
+}) {
+  return this.taskRepository.createTaskCategory(input);
+}
+
+async getTaskCategories(userId: string) {
+  return this.taskRepository.getTaskCategories(userId);
 }
 }

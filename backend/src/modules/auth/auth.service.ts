@@ -145,54 +145,49 @@ class AuthService {
     };
   }
 
-  async refreshToken(refreshToken: string) {
-    let decoded: TokenPayload;
+async refreshToken(refreshToken: string) {
+  let decoded: TokenPayload;
 
-    try {
-      decoded = verifyRefreshToken(refreshToken);
-    } catch {
-      throw new AppError(
-        MESSAGES.AUTH.INVALID_TOKEN,
-        401,
-        ErrorCode.UNAUTHORIZED
-      );
-    }
-
-    const user = await authRepository.findUserById(decoded.userId);
-
-    if (!user || !user.currentRefreshTokenHash) {
-      throw new AppError(
-        MESSAGES.AUTH.INVALID_TOKEN,
-        401,
-        ErrorCode.UNAUTHORIZED
-      );
-    }
-
-    const isValid = await bcrypt.compare(
-      refreshToken,
-      user.currentRefreshTokenHash
+  try {
+    decoded = verifyRefreshToken(refreshToken);
+  } catch {
+    throw new AppError(
+      MESSAGES.AUTH.INVALID_TOKEN,
+      401,
+      ErrorCode.UNAUTHORIZED
     );
-
-    if (!isValid) {
-      throw new AppError(
-        MESSAGES.AUTH.INVALID_TOKEN,
-        401,
-        ErrorCode.UNAUTHORIZED
-      );
-    }
-
-    const payload: TokenPayload = {
-      userId: user.id,
-      email: user.email,
-    };
-
-    const newAccessToken = generateAccessToken(payload);
-
-    return {
-      accessToken: newAccessToken,
-    };
   }
 
+  const user = await authRepository.findUserById(decoded.userId);
+
+  if (!user || !user.currentRefreshTokenHash) {
+    throw new AppError(
+      MESSAGES.AUTH.INVALID_TOKEN,
+      401,
+      ErrorCode.UNAUTHORIZED
+    );
+  }
+
+  // 🔥 DEV RAW TOKEN CHECK
+  if (refreshToken !== user.currentRefreshTokenHash) {
+    throw new AppError(
+      MESSAGES.AUTH.INVALID_TOKEN,
+      401,
+      ErrorCode.UNAUTHORIZED
+    );
+  }
+
+  const payload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+  };
+
+  const newAccessToken = generateAccessToken(payload);
+
+  return {
+    accessToken: newAccessToken,
+  };
+}
   async logout(userId: string) {
     await authRepository.updateRefreshToken(userId, null);
     return true;
