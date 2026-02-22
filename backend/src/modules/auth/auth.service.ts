@@ -12,6 +12,7 @@ import { ErrorCode } from "../../lib/errors/error-codes";
 import { MESSAGES } from "../../lib/constants/messages";
 import cloudinary from "../../config/cloudinary";
 import streamifier from "streamifier";
+import { prisma } from "../../init/prisma.init";
 
 import bcrypt from "bcrypt";
 
@@ -145,6 +146,32 @@ class AuthService {
     };
   }
 
+
+async getCurrentUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+      phoneNumber: true,
+      gender: true,
+      dateOfBirth: true,
+      profilePictureUrl: true, // ✅ Added
+    },
+  });
+
+  if (!user) {
+    throw new AppError(
+      "User not found",
+      404,
+      ErrorCode.NOT_FOUND
+    );
+  }
+
+  return user;
+}
+
 async refreshToken(refreshToken: string) {
   let decoded: TokenPayload;
 
@@ -168,7 +195,7 @@ async refreshToken(refreshToken: string) {
     );
   }
 
-  // 🔥 DEV RAW TOKEN CHECK
+  // ✅ RAW TOKEN COMPARISON (since testing)
   if (refreshToken !== user.currentRefreshTokenHash) {
     throw new AppError(
       MESSAGES.AUTH.INVALID_TOKEN,
@@ -182,12 +209,21 @@ async refreshToken(refreshToken: string) {
     email: user.email,
   };
 
+  // 🔥 Generate NEW tokens
   const newAccessToken = generateAccessToken(payload);
+  const newRefreshToken = generateRefreshToken(payload);
+
+  await authRepository.updateRefreshToken(
+    user.id,
+    newRefreshToken
+  );
 
   return {
     accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
   };
 }
+
   async logout(userId: string) {
     await authRepository.updateRefreshToken(userId, null);
     return true;
@@ -206,6 +242,8 @@ async updateProfile(userId: string, data: any) {
     "firstName",
     "lastName",
     "phoneNumber",
+    "gender",
+    "dateOfBirth",
     "address",
     "building",
     "locality",
@@ -219,7 +257,12 @@ async updateProfile(userId: string, data: any) {
 
   for (const field of allowedFields) {
     if (data[field] !== undefined) {
-      updateData[field] = data[field];
+      if (field === "dateOfBirth" && data[field]) {
+        // Convert string to Date object for Prisma
+        updateData[field] = new Date(data[field]);
+      } else {
+        updateData[field] = data[field];
+      }
     }
   }
 
@@ -231,7 +274,10 @@ async updateProfile(userId: string, data: any) {
     );
   }
 
-  const updatedUser = await authRepository.updateUser(userId, updateData);
+  const updatedUser = await authRepository.updateUser(
+    userId,
+    updateData
+  );
 
   return {
     id: updatedUser.id,
@@ -239,6 +285,8 @@ async updateProfile(userId: string, data: any) {
     lastName: updatedUser.lastName,
     email: updatedUser.email,
     phoneNumber: updatedUser.phoneNumber,
+    gender: updatedUser.gender,
+    dateOfBirth: updatedUser.dateOfBirth,
     address: updatedUser.address,
     building: updatedUser.building,
     locality: updatedUser.locality,

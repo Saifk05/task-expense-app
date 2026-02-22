@@ -92,6 +92,29 @@ class AuthController {
     }
   }
 
+  async getCurrentUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const result = await authService.getCurrentUser(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async uploadProfileImage(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;

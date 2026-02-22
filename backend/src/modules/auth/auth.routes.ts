@@ -19,4 +19,5 @@ router.patch("/users/profile", authMiddleware, validate(updateProfileSchema), Au
 
 router.post( "/auth/upload-profile", authMiddleware, upload.single("image"), AuthController.uploadProfileImage );
 
+router.get("/users/me", authMiddleware, AuthController.getCurrentUser );
 export default router;

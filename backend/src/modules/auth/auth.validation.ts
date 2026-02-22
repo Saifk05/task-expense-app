@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Gender } from "@prisma/client";
 
 export const registerSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -19,6 +20,8 @@ export const updateProfileSchema = z
     lastName: z.string().min(2).optional(),
     phoneNumber: z.string().min(10).optional(),
 
+    gender: z.nativeEnum(Gender).optional(), // ✅ added
+    dateOfBirth: z.string().optional(), // frontend sends string
     address: z.string().min(5).optional(),
     building: z.string().min(1).optional(),
     locality: z.string().min(2).optional(),

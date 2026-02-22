@@ -23,7 +23,9 @@ model User {
   lastName    String
   email       String   @unique
   phoneNumber String?
-
+  gender      Gender?
+  dateOfBirth DateTime?
+  
   address   String?
   building  String?
   locality  String?
@@ -45,7 +47,7 @@ model User {
   isActive          Boolean @default(true)
   tasks Task[]
   taskCategories TaskCategory[]
-  
+
   accounts Account[]
   transactions Transaction[]
   budgets       Budget[]
@@ -304,4 +306,10 @@ enum TaskPriority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
