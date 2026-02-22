@@ -13,6 +13,7 @@ import { ApiService } from "../../services/api.service";
 import ConfirmModal from "../../component/ConfirmModal";
 
 interface TaskSettingsScreenProps {
+  navigation: any;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean | null>>;
 }
 
@@ -58,6 +59,7 @@ const SettingItem = ({
 );
 
 const TaskSettingsScreen: React.FC<TaskSettingsScreenProps> = ({
+  navigation,
   setIsLoggedIn,
 }) => {
   const [loading, setLoading] = useState(false);
@@ -82,7 +84,7 @@ const TaskSettingsScreen: React.FC<TaskSettingsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 140 }}
       >
-        {/* HEADER */}
+        {/* Header */}
         <View style={[styles.header, { backgroundColor: "#10B981" }]}>
           <View style={styles.headerTop}>
             <Ionicons name="notifications" size={22} color="#FFD700" />
@@ -102,28 +104,32 @@ const TaskSettingsScreen: React.FC<TaskSettingsScreenProps> = ({
           </View>
         </View>
 
-        {/* TASK STATS */}
+        {/* Task Stats */}
         <View style={styles.statsGrid}>
-          <Card icon="📋" value="12" label="Total Tasks" />
-          <Card icon="✅" value="8" label="Completed" />
-          <Card icon="⏳" value="4" label="Pending" />
-          <Card icon="🔥" value="5" label="High Priority" />
+          <Card icon="12" value="12" label="Total Tasks" />
+          <Card icon="8" value="8" label="Completed" />
+          <Card icon="4" value="4" label="Pending" />
+          <Card icon="5" value="5" label="High Priority" />
         </View>
 
-        {/* SETTINGS LIST */}
+        {/* Settings List */}
         <View style={styles.settingsCard}>
           <SettingItem
             icon="notifications-outline"
             title="Notifications"
           />
+
           <SettingItem
             icon="list-outline"
             title="Task Categories"
           />
+
           <SettingItem
             icon="person-outline"
             title="Profile Settings"
+            onPress={() => navigation.navigate("Profile")}
           />
+
           <SettingItem
             icon="color-palette-outline"
             title="Theme Preferences"
@@ -138,7 +144,6 @@ const TaskSettingsScreen: React.FC<TaskSettingsScreenProps> = ({
         </View>
       </ScrollView>
 
-      {/* 🔥 Confirm Modal */}
       <ConfirmModal
         visible={showLogoutModal}
         title="Logout"

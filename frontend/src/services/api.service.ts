@@ -1,6 +1,15 @@
-import axios from "axios";
+import axios, {
+  AxiosError,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+} from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { environment } from "../config/environment";
+
+interface FailedRequest {
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}
 
 const api = axios.create({
   baseURL: environment.apiUrl,
@@ -9,10 +18,29 @@ const api = axios.create({
   },
 });
 
-//  Attach token automatically
+let isRefreshing = false;
+let failedQueue: FailedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+//
+// ================= REQUEST INTERCEPTOR =================
+//
 api.interceptors.request.use(
-  async (config) => {
+  async (config: InternalAxiosRequestConfig) => {
     const token = await AsyncStorage.getItem("auth_token");
+
+    console.log("📤 REQUEST:", config.url);
+    console.log("🔑 Access token exists:", !!token);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -23,9 +51,91 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export const ApiService = {
-  // ================= AUTH =================
+//
+// ================= RESPONSE INTERCEPTOR =================
+//
+api.interceptors.response.use(
+  (response) => {
+    console.log("✅ RESPONSE:", response.config.url);
+    return response;
+  },
+  async (error: AxiosError) => {
+    console.log("🚨 RESPONSE ERROR:", error.response?.status);
 
+    const originalRequest = error.config as
+      | (AxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/refresh")
+    ) {
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers = {
+              ...originalRequest.headers,
+              Authorization: `Bearer ${token}`,
+            };
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+        console.log("🔁 Attempting refresh...");
+
+        const response = await axios.post(
+          `${environment.apiUrl}/auth/refresh`,
+          { refreshToken }
+        );
+
+        const newAccessToken = response.data.data.accessToken;
+        const newRefreshToken = response.data.data.refreshToken;
+
+        await AsyncStorage.setItem("auth_token", newAccessToken);
+        await AsyncStorage.setItem("refresh_token", newRefreshToken);
+
+        processQueue(null, newAccessToken);
+
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${newAccessToken}`,
+        };
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+
+        await AsyncStorage.removeItem("auth_token");
+        await AsyncStorage.removeItem("refresh_token");
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+//
+// ================= API SERVICE =================
+//
+export const ApiService = {
   async login(email: string, password: string) {
     const response = await api.post("/auth/login", {
       email,
@@ -63,57 +173,40 @@ export const ApiService = {
     return response.data;
   },
 
-async logout() {
-  try {
-    await api.post("/auth/logout");
-  } catch (error) {
-    console.log("Logout API failed, clearing tokens anyway");
-  }
+  async logout() {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.log("Logout API failed");
+    }
 
-  await AsyncStorage.removeItem("auth_token");
-  await AsyncStorage.removeItem("refresh_token");
-},
-
-  async refreshToken() {
-    const refreshToken = await AsyncStorage.getItem("refresh_token");
-
-    const response = await api.post("/auth/refresh", {
-      refreshToken,
-    });
-
-    const newAccessToken = response.data.data.accessToken;
-
-    await AsyncStorage.setItem("auth_token", newAccessToken);
-
-    return response.data;
+    await AsyncStorage.removeItem("auth_token");
+    await AsyncStorage.removeItem("refresh_token");
   },
 
-  // ================= PROFILE =================
+  async getCurrentUser() {
+    const response = await api.get("/users/me");
+    return response.data;
+  },
 
   async updateProfile(data: any) {
     const response = await api.patch("/users/profile", data);
     return response.data;
   },
 
-  async uploadProfileImage(image: any) {
-    const formData = new FormData();
+async uploadProfileImage(formData: FormData) {
+  const response = await api.post(
+    "/auth/upload-profile",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
-    formData.append("image", {
-      uri: image.uri,
-      name: "profile.jpg",
-      type: "image/jpeg",
-    } as any);
-
-    const response = await api.post(
-      "/auth/upload-profile",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
-    return response.data;
-  },
+  return response.data;
+}
 };
+
+export default ApiService;
