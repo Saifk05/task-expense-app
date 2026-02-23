@@ -21,6 +21,37 @@ export default StyleSheet.create({
   marginTop: 4,
 },
 
+imageModalContainer: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.9)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+imageModalBackdrop: {
+  position: "absolute",
+  width: "100%",
+  height: "100%",
+},
+
+imageModalContent: {
+  width: "100%",
+  height: "100%",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+fullImage: {
+  width: "90%",
+  height: "70%",
+},
+
+closeButton: {
+  position: "absolute",
+  top: 60,
+  right: 25,
+},
+
 editButton: {
   marginTop: 16,
   backgroundColor: "#10B981",
@@ -59,6 +90,25 @@ editButtonText: {
     marginTop: 0,
     marginBottom: 25,
   },
+
+  notificationBadge: {
+  position: "absolute",
+  right: 40,
+  top: 28,
+  backgroundColor: "#EF4444",
+  minWidth: 20,
+  height: 20,
+  borderRadius: 10,
+  justifyContent: "center",
+  alignItems: "center",
+  paddingHorizontal: 5,
+},
+
+notificationBadgeText: {
+  color: "#FFFFFF",
+  fontSize: 11,
+  fontWeight: "600",
+},
 
   avatar: {
     width: 90,

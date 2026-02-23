@@ -206,7 +206,102 @@ async uploadProfileImage(formData: FormData) {
   );
 
   return response.data;
-}
+},
+
+async getUserOverview() {
+  const response = await api.get("/user/overview");
+  return response.data;
+},
+
+async searchLocation(name: string) {
+  const response = await api.post("/user/address/search", { name });
+  return response.data;
+},
+
+async reverseGeocode(lat: number, lng: number) {
+  const response = await api.get("/user/address/reverse", {
+    headers: {
+      coords: `${lat},${lng}`,
+    },
+  });
+
+  return response.data;
+},
+
+async getUserAddress() {
+  const response = await api.get("/user/address");
+  return response.data;
+},
+
+async changePassword(currentPassword: string, newPassword: string) {
+  const response = await api.patch("/user/change-password", {
+    currentPassword,
+    newPassword,
+  });
+
+  return response.data;
+},
+
+
+async updateAddress(data: {
+  address: string;
+  building?: string;
+  locality?: string;
+  city: string;
+  pincode: string;
+  latitude?: number;
+  longitude?: number;
+}) {
+  const response = await api.put("/user/address", data);
+  return response.data;
+},
+
+
+// async changePassword(currentPassword: string, newPassword: string) {
+//   const response = await api.patch("/user/change-password", {
+//     currentPassword,
+//     newPassword,
+//   });
+
+//   return response.data;
+// },
+
+// ================= NOTIFICATIONS =================
+
+async getNotifications(cursor?: string, limit = 10) {
+  const response = await api.get("/notifications", {
+    params: { cursor, limit },
+  });
+  return response.data;
+},
+
+async getUnreadNotificationCount() {
+  const response = await api.get(
+    "/notifications/unread-count"
+  );
+  return response.data;
+},
+
+async markNotificationAsRead(notificationId: string) {
+  const response = await api.patch(
+    `/notifications/${notificationId}/read`
+  );
+  return response.data;
+},
+
+async markAllNotificationsAsRead() {
+  const response = await api.patch(
+    "/notifications/read-all"
+  );
+  return response.data;
+},
+
+async deleteNotification(notificationId: string) {
+  const response = await api.delete(
+    `/notifications/${notificationId}`
+  );
+  return response.data;
+},
 };
 
 export default ApiService;

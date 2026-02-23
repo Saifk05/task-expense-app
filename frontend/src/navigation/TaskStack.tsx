@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import TaskSettings from "../screens/task/SettingsScreen";
 import ProfileScreen from "../screens/task/ProfileScreen";
 import EditProfileScreen from "../screens/task/EditProfileScreen";
+import EditAddressScreen from "../screens/task/EditAddressScreen";
+import NotificationScreen from "../screens/task/NotificationScreen";
+import ChangePasswordScreen from "../screens/task/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +42,22 @@ const TaskStack: React.FC<Props> = ({ setIsLoggedIn }) => {
         name="EditProfile"
         component={EditProfileScreen}
       />
+
+      {/* Edit Address Screen */}
+      <Stack.Screen
+        name="EditAddress"
+        component={EditAddressScreen}
+        />
+      {/* Notifications Screen */}
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationScreen}
+      />
+        {/* Change Password Screen */}
+        <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        />
     </Stack.Navigator>
   );
 };

@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   ScrollView,
+  Modal,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "./ProfileScreen.styles";
+import ApiService from "../../services/api.service"; // adjust path if needed
 
 interface Props {
   navigation: any;
@@ -18,6 +21,58 @@ const ProfileScreen: React.FC<Props> = ({
   navigation,
   setIsLoggedIn,
 }) => {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [imageVisible, setImageVisible] = useState(false);
+
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
+  // 🔥 Fetch user overview
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await ApiService.getUserOverview();
+        setUser(response.data);
+      } catch (error) {
+        console.log("Failed to fetch user overview", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  // 🚨 Blinking animation if address incomplete
+  useEffect(() => {
+    if (user && user.addressComplete === false) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.3,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [user]);
+
+  if (loading) {
+    return (
+      <View style={styles.wrapper}>
+        <Text style={{ textAlign: "center", marginTop: 60 }}>
+          Loading...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrapper}>
       <ScrollView
@@ -45,15 +100,25 @@ const ProfileScreen: React.FC<Props> = ({
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=12" }}
+        <TouchableOpacity onPress={() => setImageVisible(true)}>
+        <Image
+            source={{
+            uri:
+                user?.profilePictureUrl ||
+                "https://i.pravatar.cc/150?img=12",
+            }}
             style={styles.avatar}
-          />
+        />
+        </TouchableOpacity>
 
-          <Text style={styles.name}>John Doe</Text>
-          <Text style={styles.username}>@johndoe</Text>
+          <Text style={styles.name}>
+            {user?.firstName} {user?.lastName}
+          </Text>
 
-          {/* ✅ Navigation Added Here */}
+          <Text style={styles.username}>
+            {user?.email}
+          </Text>
+
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => navigation.navigate("EditProfile")}
@@ -62,36 +127,91 @@ const ProfileScreen: React.FC<Props> = ({
               Edit Profile
             </Text>
           </TouchableOpacity>
+          
         </View>
 
         {/* Options Card */}
-        <View style={styles.card}>
-          <Option
-            icon="notifications-outline"
-            title="Notifications"
-            onPress={() => {}}
-          />
+<View style={styles.card}>
+      <Option
+    icon="notifications-outline"
+    title="Notifications"
+    onPress={() => navigation.navigate("Notifications")}
+  />
 
-          <Option
-            icon="location-outline"
-            title="Address"
-            onPress={() => {}}
-          />
+  {user?.unreadNotifications > 0 && (
+    <View style={styles.notificationBadge}>
+      <Text style={styles.notificationBadgeText}>
+        {user.unreadNotifications > 10
+          ? "10+"
+          : user.unreadNotifications}
+      </Text>
+    </View>
+  )}
+
+          {/* 🚨 Address with blinking if incomplete */}
+          <Animated.View style={{ opacity: user?.addressComplete === false ? blinkAnim : 1 }}>
+            <Option
+              icon="location-outline"
+              title={
+                user?.addressComplete === false
+                  ? "Address (Incomplete)"
+                  : "Address"
+              }
+              onPress={() => navigation.navigate("EditAddress")}
+              danger={user?.addressComplete === false}
+            />
+          </Animated.View>
 
           <Option
             icon="lock-closed-outline"
             title="Change Password"
-            onPress={() => {}}
+            onPress={() => navigation.navigate("ChangePassword")}
           />
 
           <Option
             icon="log-out-outline"
             title="Logout"
             danger
-            onPress={() => setIsLoggedIn(false)}
+            onPress={async () => {
+              await ApiService.logout();
+              setIsLoggedIn(false);
+            }}
           />
         </View>
       </ScrollView>
+
+      <Modal
+  visible={imageVisible}
+  transparent
+  animationType="fade"
+>
+  <View style={styles.imageModalContainer}>
+    <TouchableOpacity
+      style={styles.imageModalBackdrop}
+      activeOpacity={1}
+      onPress={() => setImageVisible(false)}
+    />
+
+    <View style={styles.imageModalContent}>
+      <Image
+        source={{
+          uri:
+            user?.profilePictureUrl ||
+            "https://i.pravatar.cc/150?img=12",
+        }}
+        style={styles.fullImage}
+        resizeMode="contain"
+      />
+
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => setImageVisible(false)}
+      >
+        <Ionicons name="close" size={28} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };

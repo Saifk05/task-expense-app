@@ -4,54 +4,87 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+
+type BaseToastProps = {
+  text1?: string;
+  text2?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  iconBg: string;
+};
+
+const BaseToast = ({
+  text1,
+  text2,
+  icon,
+  iconColor,
+  iconBg,
+}: BaseToastProps) => {
+  return (
+    <View style={styles.container}>
+      <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
+        <Ionicons name={icon} size={18} color={iconColor} />
+      </View>
+
+      <View style={styles.textContainer}>
+        {text1 && <Text style={styles.title}>{text1}</Text>}
+        {text2 && <Text style={styles.message}>{text2}</Text>}
+      </View>
+
+      <TouchableOpacity onPress={() => Toast.hide()}>
+        <Ionicons name="close" size={18} color="#9CA3AF" />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export const toastConfig = {
-  success: ({ text1 }: any) => (
-    <LinearGradient
-      colors={["#2563EB", "#06B6D4"]}
-      style={styles.container}
-    >
-      <View style={styles.row}>
-        <View style={styles.iconBox}>
-          <Text style={styles.icon}>✓</Text>
-        </View>
-        <Text style={styles.title}>{text1}</Text>
-      </View>
-    </LinearGradient>
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      icon="checkmark"
+      iconColor="#10B981"
+      iconBg="#D1FAE5"
+    />
   ),
 
-  error: ({ text1, text2 }: any) => (
-    <LinearGradient
-      colors={["#EF4444", "#F97316"]}
-      style={styles.container}
-    >
-      <View style={styles.row}>
-        <View style={styles.iconBox}>
-          <Text style={styles.icon}>!</Text>
-        </View>
-        <View>
-          <Text style={styles.title}>{text1}</Text>
-          {text2 ? <Text style={styles.message}>{text2}</Text> : null}
-        </View>
-      </View>
-    </LinearGradient>
+  error: (props: any) => (
+    <BaseToast
+      {...props}
+      icon="close"
+      iconColor="#EF4444"
+      iconBg="#FEE2E2"
+    />
   ),
 
-  info: ({ text1 }: any) => (
-    <LinearGradient
-      colors={["#0EA5E9", "#3B82F6"]}
-      style={styles.container}
-    >
-      <View style={styles.row}>
-        <ActivityIndicator color="#fff" size="small" />
-        <Text style={[styles.title, { marginLeft: 12 }]}>
-          {text1}
-        </Text>
-      </View>
-    </LinearGradient>
+  warning: (props: any) => (
+    <BaseToast
+      {...props}
+      icon="warning"
+      iconColor="#F59E0B"
+      iconBg="#FEF3C7"
+    />
+  ),
+
+  info: (props: any) => (
+    <BaseToast
+      {...props}
+      icon="information"
+      iconColor="#3B82F6"
+      iconBg="#DBEAFE"
+    />
+  ),
+
+  neutral: (props: any) => (
+    <BaseToast
+      {...props}
+      icon="information-circle"
+      iconColor="#6B7280"
+      iconBg="#E5E7EB"
+    />
   ),
 };
 
@@ -59,77 +92,88 @@ export const toastConfig = {
 // Toast helpers
 //
 
-export const showSuccess = (message: string) => {
+export const showSuccess = (title: string, message?: string) => {
   Toast.show({
     type: "success",
-    text1: message,
+    text1: title,
+    text2: message,
     position: "top",
     visibilityTime: 3000,
   });
 };
 
-export const showError = (message: string) => {
+export const showError = (title: string, message?: string) => {
   Toast.show({
     type: "error",
-    text1: "Error",
+    text1: title,
     text2: message,
     position: "top",
     visibilityTime: 4000,
   });
 };
 
-export const showInfo = (message: string) => {
+export const showWarning = (title: string, message?: string) => {
   Toast.show({
-    type: "info",
-    text1: message,
+    type: "warning",
+    text1: title,
+    text2: message,
     position: "top",
-    visibilityTime: 3000,
   });
 };
 
+export const showInfo = (title: string, message?: string) => {
+  Toast.show({
+    type: "info",
+    text1: title,
+    text2: message,
+    position: "top",
+  });
+};
+
+//
+// Styles
+//
+
 const styles = StyleSheet.create({
   container: {
-    width: "90%",
+    width: "92%",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 15,
-  },
-
-  row: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
+
+    // Soft floating shadow
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
 
   iconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
   },
 
-  icon: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
+  textContainer: {
+    flex: 1,
   },
 
   title: {
-    color: "#fff",
     fontSize: 15,
     fontWeight: "600",
+    color: "#111827",
   },
 
   message: {
-    color: "rgba(255,255,255,0.9)",
     fontSize: 13,
+    color: "#6B7280",
     marginTop: 4,
   },
 });
