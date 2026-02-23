@@ -15,4 +15,7 @@ export const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
+  
+  OLA_MAPS_API: z.string().url(),
+  OLAMAPS_KEY: z.string().min(10),
 });
