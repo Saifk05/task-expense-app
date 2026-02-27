@@ -222,11 +222,45 @@ const handleToggleMFA = async (value: boolean) => {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: "#10B981" }]}>
           <View style={[styles.headerTop, { paddingTop: 10 }]}>
-            <Ionicons
-              name="notifications"
-              size={30}
-              color="#FFD700"
-            />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate("Notifications")}
+            >
+              <View style={{ position: "relative" }}>
+                <Ionicons
+                  name="notifications"
+                  size={30}
+                  color="#FFD700"
+                />
+
+                {unreadCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -6,
+                      backgroundColor: "#EF4444",
+                      borderRadius: 10,
+                      minWidth: 18,
+                      height: 18,
+                      paddingHorizontal: 4,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.profileRow}>
