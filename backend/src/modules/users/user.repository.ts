@@ -111,4 +111,15 @@ async updatePassword(userId: string, newPasswordHash: string) {
   });
 }
 
+
+async updateMfaStatus(userId: string, isMfaEnabled: boolean) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { isMfaEnabled },
+    select: {
+      isMfaEnabled: true,
+    },
+  });
+}
+
 }

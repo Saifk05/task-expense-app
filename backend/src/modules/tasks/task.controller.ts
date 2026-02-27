@@ -1,10 +1,12 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../lib/middleware/auth.middleware";
 import { TaskService } from "./task.service";
-import { createTaskSchema } from "./task.validation";
-import { updateTaskSchema } from "./task.validation";
-import { getTasksSchema } from "./task.validation";
-import { createTaskCategorySchema } from "./task.validation";
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  getTasksSchema,
+  createTaskCategorySchema,
+} from "./task.validation";
 
 export class TaskController {
   private taskService: TaskService;
@@ -12,6 +14,10 @@ export class TaskController {
   constructor(taskService: TaskService) {
     this.taskService = taskService;
   }
+
+  /* ============================= */
+  /* CREATE TASK */
+  /* ============================= */
 
   createTask = async (
     req: AuthRequest,
@@ -35,43 +41,78 @@ export class TaskController {
     }
   };
 
+  /* ============================= */
+  /* UPDATE TASK */
+  /* ============================= */
 
-updateTask = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    // Validate request body
-    const parsed = updateTaskSchema.parse(req.body);
+  updateTask = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const parsed = updateTaskSchema.parse(req.body);
 
-    const taskIdParam = req.params.id;
+      const taskIdParam = req.params.id;
 
-    if (!taskIdParam || Array.isArray(taskIdParam)) {
-    return res.status(400).json({
-        success: false,
-        message: "Invalid task ID",
-    });
+      if (!taskIdParam || Array.isArray(taskIdParam)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid task ID",
+        });
+      }
+
+      const updatedTask = await this.taskService.updateTask(
+        taskIdParam,
+        req.user!.userId,
+        parsed
+      );
+
+      res.status(200).json({
+        success: true,
+        data: updatedTask,
+      });
+    } catch (error) {
+      next(error);
     }
+  };
 
-    const taskId = taskIdParam;
+  /* ============================= */
+  /* GET TASKS */
+  /* ============================= */
 
-    const updatedTask = await this.taskService.updateTask(
-      taskId,
-      req.user!.userId,
-      parsed
-    );
+  // getTasks = async (
+  //   req: AuthRequest,
+  //   res: Response,
+  //   next: NextFunction
+  // ) => {
+  //   try {
+  //     const parsed = getTasksSchema.parse(req.query);
 
-    res.status(200).json({
-      success: true,
-      data: updatedTask,
-    });
-  } catch (error) {
-    next(error);
-  }
-};  
+  //     const result = await this.taskService.getTasks({
+  //       userId: req.user!.userId,
+  //       limit: parsed.limit ?? 5,
+  //       cursor: parsed.cursor,
+  //       status: parsed.status,
+  //       priority: parsed.priority,
+  //       categoryId: parsed.categoryId,
+  //       startFrom: parsed.startFrom,
+  //       startTo: parsed.startTo,
+  //       dueFrom: parsed.dueFrom,
+  //       dueTo: parsed.dueTo,
+  //     });
 
-getTasks = async (
+  //     res.status(200).json({
+  //       success: true,
+  //       ...result,
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
+
+
+  getTasks = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -79,13 +120,25 @@ getTasks = async (
   try {
     const parsed = getTasksSchema.parse(req.query);
 
+    // ✅ If summary requested
+    if (parsed.summary) {
+      const summary = await this.taskService.getTaskSummary(
+        req.user!.userId
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: summary,
+      });
+    }
+
     const result = await this.taskService.getTasks({
       userId: req.user!.userId,
       limit: parsed.limit ?? 5,
       cursor: parsed.cursor,
       status: parsed.status,
       priority: parsed.priority,
-      categoryId: parsed.categoryId,   // ✅ ADD THIS
+      categoryId: parsed.categoryId,
       startFrom: parsed.startFrom,
       startTo: parsed.startTo,
       dueFrom: parsed.dueFrom,
@@ -100,48 +153,55 @@ getTasks = async (
     next(error);
   }
 };
+  /* ============================= */
+  /* CREATE TASK CATEGORY */
+  /* ============================= */
 
-createTaskCategory = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const parsed = createTaskCategorySchema.parse(req.body);
+  createTaskCategory = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const parsed = createTaskCategorySchema.parse(req.body);
 
-    const category = await this.taskService.createTaskCategory({
-      userId: req.user!.userId,
-      name: parsed.name,
-      parentId: parsed.parentId ?? null,
-    });
+      const category = await this.taskService.createTaskCategory({
+        userId: req.user!.userId,
+        name: parsed.name,
+        parentId: parsed.parentId ?? null,
+        icon: parsed.icon ?? null,     // ✅ NEW
+        color: parsed.color ?? null,   // ✅ NEW
+      });
 
-    res.status(201).json({
-      success: true,
-      data: category,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+      res.status(201).json({
+        success: true,
+        data: category,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
-getTaskCategories = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const categories = await this.taskService.getTaskCategories(
-      req.user!.userId
-    );
+  /* ============================= */
+  /* GET TASK CATEGORIES */
+  /* ============================= */
 
-    res.status(200).json({
-      success: true,
-      data: categories,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  getTaskCategories = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const categories = await this.taskService.getTaskCategories(
+        req.user!.userId
+      );
 
-
+      res.status(200).json({
+        success: true,
+        data: categories,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

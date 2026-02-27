@@ -39,3 +39,10 @@ export const reverseGeocodeSchema = z.object({
     .string()
     .regex(/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/, "Invalid coords format"),
 });
+
+/** 
+ * Toggle MFA Validation
+ */
+export const toggleMfaSchema = z.object({
+  isMfaEnabled: z.boolean(),
+});

@@ -1,44 +1,79 @@
 import React from "react";
-import { View, Text, Dimensions, StyleSheet } from "react-native";
-import { ProgressChart } from "react-native-chart-kit";
-import { chartConfig } from "../expense/chartConfig";
+import { View, Text, StyleSheet } from "react-native";
 
-const screenWidth = Dimensions.get("window").width;
+interface Props {
+  completionRate: number;
+}
 
-export default function TaskProgressChartCard() {
-  const data = {
-    labels: ["Completed"],
-    data: [0.72], // 72%
-  };
+const TaskProgressChartCard: React.FC<Props> = ({
+  completionRate,
+}) => {
+  const progress = Math.min(Math.max(completionRate, 0), 100);
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Overall Completion</Text>
+      <Text style={styles.title}>Weekly Progress</Text>
 
-      <ProgressChart
-        data={data}
-        width={screenWidth - 60}
-        height={200}
-        strokeWidth={16}
-        radius={32}
-        chartConfig={chartConfig}
-        hideLegend={false}
-      />
+      <View style={styles.progressHeader}>
+        <Text style={styles.label}>Completion Rate</Text>
+        <Text style={styles.percent}>{progress}%</Text>
+      </View>
+
+      <View style={styles.progressBackground}>
+        <View
+          style={[styles.progressFill, { width: `${progress}%` }]}
+        />
+      </View>
     </View>
   );
-}
+};
+
+export default TaskProgressChartCard;
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 25,
+    padding: 24,
+    borderRadius: 24,
+    marginBottom: 30,
     elevation: 4,
   },
+
   title: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 18,
+    color: "#111",
+  },
+
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+
+  label: {
+    fontSize: 14,
+    color: "#444",
+  },
+
+  percent: {
     fontSize: 16,
     fontWeight: "700",
-    marginBottom: 15,
+    color: "#6C63FF",
+  },
+
+  progressBackground: {
+    height: 12,
+    backgroundColor: "#E9ECF2",
+    borderRadius: 30,
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: 12,
+    backgroundColor: "#6C63FF",
+    borderRadius: 30,
   },
 });

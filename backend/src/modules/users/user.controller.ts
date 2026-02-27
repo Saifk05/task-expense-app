@@ -6,6 +6,7 @@ import {
   searchLocationSchema,
   reverseGeocodeSchema,
   changePasswordSchema,
+  toggleMfaSchema,
 } from "./user.validation";
 
 export class UserController {
@@ -229,4 +230,45 @@ export class UserController {
       next(error);
     }
   };
+
+
+  /**
+ * PATCH /user/mfa
+ */
+toggleMfa = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const parsed = toggleMfaSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        errors: parsed.error.flatten(),
+      });
+    }
+
+    const data = await this.userService.toggleMfa(
+      req.user.userId,
+      parsed.data.isMfaEnabled
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `MFA ${parsed.data.isMfaEnabled ? "enabled" : "disabled"} successfully`,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 }

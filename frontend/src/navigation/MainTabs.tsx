@@ -3,13 +3,14 @@ import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useMode } from "../context/ModeContext";
-
+import ExpenseStack from "./ExpenseStack";
 import ExpenseHome from "../screens/expense/HomeScreen";
 import ExpenseSettings from "../screens/expense/SettingsScreen";
 import TaskHome from "../screens/task/HomeScreen";
-import TaskSettings from "../screens/task/SettingsScreen";
 import TaskStack from "./TaskStack";
-
+import TaskAnalyticsScreen from "../screens/task/TaskAnalyticsScreen";
+import SplashScreen from "../screens/auth/SplashScreen"; // 👈 Added
+import AnalyticsStack from "./AnalyticsTask"; //
 const Tab = createBottomTabNavigator();
 
 interface MainTabsProps {
@@ -17,7 +18,12 @@ interface MainTabsProps {
 }
 
 const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
-  const { mode } = useMode();
+  const { mode, isLoaded } = useMode();
+
+  // 🚨 VERY IMPORTANT — Wait for mode restore before rendering tabs
+  if (!isLoaded) {
+    return null;
+  }
 
   const activeColor = mode === "expense" ? "#3985F7" : "#10B981";
   const isExpense = mode === "expense";
@@ -67,11 +73,8 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
           </Tab.Screen>
 
           <Tab.Screen name="Settings">
-            {(props) => (
-              <ExpenseSettings
-                {...props}
-                setIsLoggedIn={setIsLoggedIn}
-              />
+            {() => (
+              <ExpenseStack setIsLoggedIn={setIsLoggedIn} />
             )}
           </Tab.Screen>
         </>
@@ -84,23 +87,26 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
           />
 
           <Tab.Screen
-            name="Analytics"
-            options={{ title: "Progress" }}
-          >
-            {(props) => (
-              <TaskSettings
-                {...props}
-                setIsLoggedIn={setIsLoggedIn}
-              />
-            )}
-          </Tab.Screen>
+  name="Analytics"
+  component={AnalyticsStack}
+  options={{ title: "Progress" }}
+/>
 
-          {/* Settings now uses TaskStack */}
-          <Tab.Screen name="Settings">
+          {/* <Tab.Screen name="Analytics" options={{ title: "Progress" }}>
             {() => (
-              <TaskStack setIsLoggedIn={setIsLoggedIn} />
+              <TaskAnalyticsScreen setIsLoggedIn={setIsLoggedIn} />
             )}
           </Tab.Screen>
+           */}
+
+        <Tab.Screen
+          name="Settings"
+          options={{ title: "Settings" }}
+        >
+          {() => (
+            <TaskStack setIsLoggedIn={setIsLoggedIn} />
+          )}
+        </Tab.Screen>
         </>
       )}
     </Tab.Navigator>

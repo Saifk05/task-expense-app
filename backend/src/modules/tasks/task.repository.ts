@@ -1,107 +1,201 @@
-  import { prisma } from "../../config/prisma";
-  import { Prisma, NotificationType, NotificationChannel, TaskPriority  } from "@prisma/client";
+import { prisma } from "../../config/prisma";
+import {
+  Prisma,
+  NotificationType,
+  NotificationChannel,
+  TaskPriority,
+  TaskStatus,
+} from "@prisma/client";
+import { AppError } from "../../lib/errors/app-error";
+import { ErrorCode } from "../../lib/errors/error-codes";
 
-  export class TaskRepository {
-    async createWithNotification(data: {
-      userId: string;
-      title: string;
-      description?: string;
-      priority: TaskPriority;
-      startDate: Date;
-      dueDate: Date;
-    }) {
-      return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-          const task = await tx.task.create({
-          data: {
-            userId: data.userId,
-            title: data.title,
-            description: data.description,
-            priority: data.priority,
-            startDate: data.startDate,
-            dueDate: data.dueDate,
-          },
-        });
+export class TaskRepository {
 
-        await tx.notification.create({
-          data: {
-            userId: data.userId,
-            title: "Task Created",
-            message: `Task "${task.title}" has been created successfully.`,
-            type: NotificationType.TASK_CREATED,
-            deliveryChannel: NotificationChannel.IN_APP,
-            relatedTaskId: task.id,
-          },
-        });
+  // =====================================================
+  // CREATE TASK WITH NOTIFICATION
+  // =====================================================
 
-        return task;
-      });
+async createWithNotification(data: {
+  userId: string;
+  description?: string;
+  priority: TaskPriority;
+  categoryId: string;     // parent
+  subCategoryId: string;  // child
+  startDate: Date;
+  dueDate: Date;
+}) {
+  return prisma.$transaction(async (tx) => {
+
+    const parentCategory = await tx.taskCategory.findFirst({
+      where: {
+        id: data.categoryId,
+        userId: data.userId,
+        parentId: null,
+      },
+    });
+
+    if (!parentCategory) {
+      throw new AppError(
+        "Invalid parent category",
+        400,
+        ErrorCode.VALIDATION_ERROR
+      );
     }
 
-    async updateTaskWithNotification(
+    const subCategory = await tx.taskCategory.findFirst({
+      where: {
+        id: data.subCategoryId,
+        userId: data.userId,
+        parentId: data.categoryId,
+      },
+    });
+
+    if (!subCategory) {
+      throw new AppError(
+        "Invalid subcategory for selected category",
+        400,
+        ErrorCode.VALIDATION_ERROR
+      );
+    }
+
+    const title = `${parentCategory.name} - ${subCategory.name}`;
+
+    const task = await tx.task.create({
+      data: {
+        userId: data.userId,
+        title,
+        description: data.description,
+        priority: data.priority,
+        startDate: data.startDate,
+        dueDate: data.dueDate,
+        categoryId: data.subCategoryId,
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        userId: data.userId,
+        title: "Task Created",
+        message: `Task "${task.title}" has been created successfully.`,
+        type: NotificationType.TASK_CREATED,
+        deliveryChannel: NotificationChannel.IN_APP,
+        relatedTaskId: task.id,
+      },
+    });
+
+    return task;
+  });
+}
+  // =====================================================
+  // UPDATE TASK WITH NOTIFICATION
+  // =====================================================
+
+  async updateTaskWithNotification(
     taskId: string,
     userId: string,
-    updateData: any
+    updateData: {
+      title?: string;
+      description?: string;
+      priority?: TaskPriority;
+      status?: TaskStatus;
+      categoryId?: string | null;
+      startDate?: Date;
+      dueDate?: Date;
+      cancelledReason?: string;
+    }
   ) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return prisma.$transaction(async (tx) => {
 
       const existingTask = await tx.task.findFirst({
-        where: {
-          id: taskId,
-          userId,
-        },
+        where: { id: taskId, userId },
       });
 
       if (!existingTask) {
-        throw new Error("Task not found");
+        throw new AppError("Task not found", 404, ErrorCode.NOT_FOUND);
       }
 
-      // ❌ Prevent modification if already completed or cancelled
       if (
-        existingTask.status === "COMPLETED" ||
-        existingTask.status === "CANCELLED"
+        existingTask.status === TaskStatus.COMPLETED ||
+        existingTask.status === TaskStatus.CANCELLED
       ) {
-        throw new Error("Cannot modify completed or cancelled task");
+        throw new AppError(
+          "Cannot modify completed or cancelled task",
+          400,
+          ErrorCode.VALIDATION_ERROR
+        );
       }
 
-      // ✅ Validate status transitions
-      if (updateData.status) {
-        const currentStatus = existingTask.status;
-        const newStatus = updateData.status;
+      // Handle category relation properly
+      let categoryRelation:
+        | Prisma.TaskUpdateInput["category"]
+        | undefined;
 
-        const validTransitions: Record<string, string[]> = {
-          PENDING: ["IN_PROGRESS", "COMPLETED", "CANCELLED"],
-          IN_PROGRESS: ["COMPLETED", "CANCELLED"],
-        };
+      if (updateData.categoryId !== undefined) {
 
-        if (
-          validTransitions[currentStatus] &&
-          !validTransitions[currentStatus].includes(newStatus)
-        ) {
-          throw new Error("Invalid status transition");
-        }
+        if (updateData.categoryId === null) {
+          categoryRelation = { disconnect: true };
+        } else {
+          const category = await tx.taskCategory.findFirst({
+            where: {
+              id: updateData.categoryId,
+              userId,
+            },
+          });
 
-        // If cancelling, require reason
-        if (newStatus === "CANCELLED" && !updateData.cancelledReason) {
-          throw new Error("Cancelled reason is required");
+          if (!category) {
+            throw new AppError(
+              "Invalid category",
+              400,
+              ErrorCode.VALIDATION_ERROR
+            );
+          }
+
+          categoryRelation = {
+            connect: { id: updateData.categoryId },
+          };
         }
       }
 
       const updatedTask = await tx.task.update({
         where: { id: taskId },
-        data: updateData,
+        data: {
+          ...(updateData.title !== undefined && { title: updateData.title }),
+          ...(updateData.description !== undefined && { description: updateData.description }),
+          ...(updateData.priority !== undefined && { priority: updateData.priority }),
+          ...(updateData.startDate !== undefined && { startDate: updateData.startDate }),
+          ...(updateData.dueDate !== undefined && { dueDate: updateData.dueDate }),
+          ...(updateData.cancelledReason !== undefined && {
+            cancelledReason: updateData.cancelledReason,
+          }),
+          ...(categoryRelation && { category: categoryRelation }),
+
+          ...(updateData.status === TaskStatus.COMPLETED && {
+            status: TaskStatus.COMPLETED,
+            completedAt: new Date(),
+          }),
+
+          ...(updateData.status === TaskStatus.CANCELLED && {
+            status: TaskStatus.CANCELLED,
+          }),
+
+          ...(updateData.status &&
+            updateData.status !== TaskStatus.COMPLETED &&
+            updateData.status !== TaskStatus.CANCELLED && {
+              status: updateData.status,
+              completedAt: null,
+            }),
+        },
       });
 
-      // 🔔 Notification Logic
       let notificationType: NotificationType = NotificationType.TASK_UPDATED;
       let message = `Task "${updatedTask.title}" has been updated.`;
 
-      if (updateData.status === "COMPLETED") {
+      if (updatedTask.status === TaskStatus.COMPLETED) {
         notificationType = NotificationType.TASK_COMPLETED;
         message = `Task "${updatedTask.title}" has been completed.`;
       }
 
-      if (updateData.status === "CANCELLED") {
-        notificationType = NotificationType.TASK_UPDATED;
+      if (updatedTask.status === TaskStatus.CANCELLED) {
         message = `Task "${updatedTask.title}" has been cancelled.`;
       }
 
@@ -120,8 +214,12 @@
     });
   }
 
+  // =====================================================
+  // GET TASKS (PAGINATED)
+  // =====================================================
+
   async getTasks(input: {
-    filters: any;
+    filters: Prisma.TaskWhereInput;
     limit: number;
     cursor?: string;
   }) {
@@ -129,14 +227,14 @@
 
     const tasks = await prisma.task.findMany({
       where: filters,
-      take: limit + 1, // Fetch one extra to check next cursor
+      take: limit + 1,
       ...(cursor && {
         skip: 1,
         cursor: { id: cursor },
       }),
       orderBy: [
-        { dueDate: "asc" }, // Nearest due first
-        { createdAt: "desc" },
+        { dueDate: "asc" },
+        { id: "asc" },
       ],
     });
 
@@ -153,32 +251,161 @@
     };
   }
 
+  // =====================================================
+  // CREATE TASK CATEGORY (WITH ICON + COLOR)
+  // =====================================================
+
   async createTaskCategory(input: {
     userId: string;
     name: string;
     parentId?: string | null;
+    icon?: string | null;
+    color?: string | null;
   }) {
+
+    if (input.parentId) {
+      const parent = await prisma.taskCategory.findFirst({
+        where: {
+          id: input.parentId,
+          userId: input.userId,
+          parentId: null,
+        },
+      });
+
+      if (!parent) {
+        throw new AppError(
+          "Invalid parent category",
+          400,
+          ErrorCode.VALIDATION_ERROR
+        );
+      }
+    }
+
     return prisma.taskCategory.create({
       data: {
         userId: input.userId,
         name: input.name.trim(),
         parentId: input.parentId ?? null,
+        icon: input.icon ?? null,
+        color: input.color ?? null,
       },
     });
   }
 
-  async getTaskCategories(userId: string) {
-    return prisma.taskCategory.findMany({
+  // =====================================================
+  // GET TASK CATEGORIES WITH CHILDREN
+  // =====================================================
+
+async getTaskCategories(userId: string) {
+  return prisma.taskCategory.findMany({
+    where: {
+      userId,
+      parentId: null,
+    },
+    include: {
+      children: {
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+}
+
+async getTaskSummary(userId: string) {
+  const now = new Date();
+
+  const [
+    unreadCount,
+    total,
+    completed,
+    pending,
+    overdue,
+    user,
+  ] = await prisma.$transaction([
+    prisma.notification.count({
       where: {
         userId,
-        parentId: null,
+        isRead: false,
       },
-      include: {
-        children: true,
+    }),
+
+    prisma.task.count({
+      where: { userId },
+    }),
+
+    prisma.task.count({
+      where: {
+        userId,
+        status: TaskStatus.COMPLETED,
       },
-      orderBy: {
-        createdAt: "asc",
+    }),
+
+    prisma.task.count({
+      where: {
+        userId,
+        status: TaskStatus.PENDING,
       },
-    });
-  }
-  }
+    }),
+
+    prisma.task.count({
+      where: {
+        userId,
+        status: {
+          in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS],
+        },
+        dueDate: {
+          lt: now,
+        },
+      },
+    }),
+
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        address: true,
+        city: true,
+        pincode: true,
+        profilePictureUrl: true, 
+        isMfaEnabled: true,
+      },
+    }),
+    // prisma.user.findUnique({
+    //   where: { id: userId },
+    //   select: {
+    //     address: true,
+    //     city: true,
+    //     pincode: true,
+    //     phoneNumber: true,
+    //     dateOfBirth: true,
+    //   },
+    // }),
+  ]);
+
+  const isIncomplete =
+    !user ||
+    !user.address ||
+    !user.city ||
+    !user.pincode 
+
+  return {
+    notifications: {
+      unreadCount,
+    },
+    profile: {
+      isIncomplete,
+      profilePictureUrl: user?.profilePictureUrl ?? null,
+      mfaEnabled: user?.isMfaEnabled ?? false,
+    },
+    tasks: {
+      total,
+      completed,
+      pending,
+      overdue,
+    },
+  };
+}
+}

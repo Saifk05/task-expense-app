@@ -1,98 +1,105 @@
-import React, { useState } from "react";
-import { View, Text, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
-import { chartConfig } from "../expense/chartConfig";
 
-const screenWidth = Dimensions.get("window").width;
+const screenWidth = Dimensions.get("window").width - 40;
 
-export default function TaskLineChartCard() {
-  const [range, setRange] = useState<"week" | "month">("week");
+interface Props {
+  data: { date: string; count: number }[];
+}
 
-  const weeklyData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    datasets: [{ data: [2, 4, 3, 5, 6, 4, 7] }],
-  };
+const TaskLineChartCard: React.FC<Props> = ({ data }) => {
+  const labels = data.map((item) => {
+    const d = new Date(item.date);
+    return d.toLocaleDateString("en-US", { weekday: "short" });
+  });
 
-  const monthlyData = {
-    labels: ["W1", "W2", "W3", "W4"],
-    datasets: [{ data: [18, 22, 15, 27] }],
-  };
+  const values = data.map((item) => item.count);
 
-  const chartData = range === "week" ? weeklyData : monthlyData;
+  const hasData = values.some((v) => v > 0);
+
+  if (!hasData) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Weekly Task Activity</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            No task activity in selected range.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.card}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Tasks Completed</Text>
-
-        <View style={styles.toggleRow}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, range === "week" && styles.activeBtn]}
-            onPress={() => setRange("week")}
-          >
-            <Text style={[styles.toggleText, range === "week" && styles.activeText]}>
-              Week
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.toggleBtn, range === "month" && styles.activeBtn]}
-            onPress={() => setRange("month")}
-          >
-            <Text style={[styles.toggleText, range === "month" && styles.activeText]}>
-              Month
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Text style={styles.title}>Weekly Task Activity</Text>
 
       <LineChart
-        data={chartData}
-        width={screenWidth - 60}
+        data={{
+          labels,
+          datasets: [
+            {
+              data: values,
+            },
+          ],
+        }}
+        width={screenWidth}
         height={220}
+        yAxisLabel=""
         yAxisSuffix=""
-        chartConfig={chartConfig}
+        fromZero
+        withInnerLines={false}
+        withOuterLines={false}
+        withDots
+        chartConfig={{
+          backgroundGradientFrom: "#ffffff",
+          backgroundGradientTo: "#ffffff",
+          decimalPlaces: 0,
+          color: (opacity = 1) => `rgba(108, 99, 255, ${opacity})`,
+          labelColor: () => "#444",
+          propsForBackgroundLines: {
+            stroke: "#f2f2f2",
+            strokeDasharray: "",
+          },
+          strokeWidth: 3,
+        }}
+        style={styles.chart}
         bezier
       />
     </View>
   );
-}
+};
+
+export default TaskLineChartCard;
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 20,
+    padding: 20,
+    borderRadius: 24,
     marginBottom: 25,
     elevation: 4,
   },
+
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginBottom: 15,
   },
-  toggleRow: {
-    flexDirection: "row",
+
+  chart: {
+    borderRadius: 16,
   },
-  toggleBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 5,
-    backgroundColor: "#E5E7EB",
+
+  emptyContainer: {
+    paddingVertical: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  activeBtn: {
-    backgroundColor: "#10B981",
-  },
-  toggleText: {
-    fontSize: 12,
-    color: "#374151",
-  },
-  activeText: {
-    color: "#FFFFFF",
+
+  emptyText: {
+    color: "#888",
+    fontSize: 14,
   },
 });

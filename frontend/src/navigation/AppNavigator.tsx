@@ -13,54 +13,53 @@ const Stack = createNativeStackNavigator();
 
 const linking = {
   prefixes: [Linking.createURL("/")],
-  config: {
-    screens: {
-      Login: "",           // 👈 Root path
-      Register: "register",
-    },
-  },
 };
 
 const AppNavigator = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  // 🔥 Check token on app start
   useEffect(() => {
     const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem("auth_token");
-        setIsLoggedIn(!!token);
-      } catch (error) {
-        setIsLoggedIn(false);
-      }
+      const token = await AsyncStorage.getItem("auth_token");
+      setIsLoggedIn(!!token);
     };
-
     checkLoginStatus();
   }, []);
 
-  // 🔥 Show Splash ONLY while checking auth
   if (isLoggedIn === null) {
     return <SplashScreen />;
   }
 
   return (
     <NavigationContainer linking={linking}>
-      {isLoggedIn ? (
-        <MainTabs setIsLoggedIn={setIsLoggedIn} />
-      ) : (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login">
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isLoggedIn ? (
+          <Stack.Screen name="Main">
             {(props) => (
-              <LoginScreen {...props} setIsLoggedIn={setIsLoggedIn} />
+              <MainTabs
+                {...props}
+                setIsLoggedIn={setIsLoggedIn}
+              />
             )}
           </Stack.Screen>
+        ) : (
+          <>
+            <Stack.Screen name="Login">
+              {(props) => (
+                <LoginScreen
+                  {...props}
+                  setIsLoggedIn={setIsLoggedIn}
+                />
+              )}
+            </Stack.Screen>
 
-          <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-          />
-        </Stack.Navigator>
-      )}
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+            />
+          </>
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };

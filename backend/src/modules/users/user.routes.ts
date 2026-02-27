@@ -8,6 +8,7 @@ const userController = new UserController();
 
 router.get( "/user/overview",  authMiddleware, userController.getOverview );
 router.put("/user/address",  authMiddleware,  userController.updateAddress );
+router.patch("/user/mfa", authMiddleware, userController.toggleMfa);
 
 router.post(
   "/user/address/search",

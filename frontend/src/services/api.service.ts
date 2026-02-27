@@ -302,6 +302,150 @@ async deleteNotification(notificationId: string) {
   );
   return response.data;
 },
+
+// ================= TASKS =================
+
+// Create Task
+async createTask(data: {
+  title: string;
+  description?: string;
+  categoryId: string;
+  subCategoryId?: string;
+  amount?: number;
+  date?: string;
+}) {
+  const response = await api.post("/task/create-task", data);
+  return response.data;
+},
+
+// ================= TASK DASHBOARD =================
+
+async getTaskDashboard(params?: {
+  weekStart?: string;
+  weekEnd?: string;
+}) {
+  const response = await api.get("/task/dashboard", {
+    params,
+  });
+
+  return response.data;
+},
+
+// Update Task
+async updateTask(id: string, data: any) {
+  const response = await api.patch(`/task/${id}`, data);
+  return response.data;
+},
+
+// Get All Tasks
+async getTasks(params?: {
+  limit?: number;
+  cursor?: string;
+  status?: string;
+  priority?: string;
+  categoryId?: string;
+  summary?: boolean;
+}) {
+  const response = await api.get("/task", {
+    params,
+  });
+
+  return response.data;
+},
+
+// Create Task Category (Admin use mostly)
+async createTaskCategory(data: {
+  name: string;
+  parentId?: string; //  REQUIRED for subcategory
+  icon?: string;     // only for parent
+  color?: string;    // only for parent
+}) {
+  const response = await api.post("/task/category", data);
+  return response.data;
+},
+
+// Get Task Categories
+async getTaskCategories() {
+  const response = await api.get("/task/category");
+  return response.data;
+},
+
+
+// ================= SECURITY =================
+
+async toggleMfa(isMfaEnabled: boolean) {
+  const response = await api.patch("/user/mfa", {
+    isMfaEnabled,
+  });
+
+  return response.data;
+},
+
+
+// ================= PRODUCTIVITY =================
+
+async getProductivitySummary() {
+  const response = await api.get("/productivity/summary");
+  return response.data;
+},
+
+// ================= PRODUCTIVITY TASK LISTS =================
+
+async getPendingTasks(cursor?: string, limit: number = 10) {
+  const response = await api.get(
+    "/productivity/tasks/pending",
+    {
+      params: { cursor, limit },
+    }
+  );
+
+  return response.data;
+},
+
+async getOverdueTasks(cursor?: string, limit: number = 10) {
+  const response = await api.get(
+    "/productivity/tasks/overdue",
+    {
+      params: { cursor, limit },
+    }
+  );
+
+  return response.data;
+},
+
+async getCompletedTasks(cursor?: string, limit: number = 10) {
+  const response = await api.get(
+    "/productivity/tasks/completed",
+    {
+      params: { cursor, limit },
+    }
+  );
+
+  return response.data;
+},
+
+async getCancelledTasks(cursor?: string, limit: number = 10) {
+  const response = await api.get(
+    "/productivity/tasks/cancelled",
+    {
+      params: { cursor, limit },
+    }
+  );
+
+  return response.data;
+},
+
+async getInProgressTasks(cursor?: string, limit: number = 10) {
+  const response = await api.get(
+    "/productivity/tasks/in-progress",
+    {
+      params: { cursor, limit },
+    }
+  );
+
+  return response.data;
+},
+
 };
 
 export default ApiService;

@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
 
   headerTop: {
     alignItems: "flex-end",
-    marginTop: 25,
+    marginTop: 10,
     marginBottom: 15,
   },
 
@@ -56,30 +56,52 @@ export const styles = StyleSheet.create({
     marginTop: 20,
   },
 
-  statCard: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 15,
+  // statCard: {
+  //   width: "48%",
+  //   backgroundColor: "#FFFFFF",
+  //   borderRadius: 16,
+  //   padding: 15,
+  //   marginBottom: 15,
 
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
+  //   shadowColor: "#000",
+  //   shadowOpacity: 0.05,
+  //   shadowRadius: 8,
+  //   shadowOffset: { width: 0, height: 4 },
+  //   elevation: 3,
+  // },
+
+
+  statCard: {
+  width: "48%",
+  borderRadius: 18,
+  paddingVertical: 20,
+  paddingHorizontal: 16,
+  marginBottom: 15,
+
+  shadowColor: "#000",
+  shadowOpacity: 0.06,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 4,
+},
+
 
   statIcon: {
     fontSize: 20,
     marginBottom: 8,
   },
 
+
   statValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-  },
+  fontSize: 22,
+  fontWeight: "800",
+},
+
+  // statValue: {
+  //   fontSize: 22,
+  //   fontWeight: "800",
+  //   color: "#111827",
+  // },
 
   statSubtitle: {
     fontSize: 12,

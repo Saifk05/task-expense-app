@@ -6,20 +6,18 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
   },
 
-  /* ================= HEADER ================= */
+  /* HEADER */
   header: {
-    paddingTop: 25,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    backgroundColor: "#4F8EF7",
+    paddingBottom: 40,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
   },
 
   headerTop: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 8,
+    alignItems: "flex-end",
+    marginBottom: 10,
   },
 
   profileRow: {
@@ -28,109 +26,81 @@ export const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 55,
-    height: 55,
-    borderRadius: 27.5,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     marginRight: 14,
   },
 
   name: {
-    color: "#fff",
-    fontSize: 15,
+    color: "#FFFFFF",
+    fontSize: 18,
     fontWeight: "700",
   },
 
-  email: {
-    color: "#E0E7FF",
-    fontSize: 11,
-    marginTop: 2,
+  subtitle: {
+    color: "#DBEAFE",
+    fontSize: 13,
+    marginTop: 4,
   },
 
-  /* ================= STATS ================= */
+  /* STAT CARDS */
   statsGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     marginTop: 20,
   },
 
   statCard: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    marginBottom: 10,
+    borderRadius: 20,
+    padding: 18,
   },
 
-  statIcon: {
-    fontSize: 16,
-  },
-
-  statTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
     marginTop: 8,
     color: "#111827",
   },
 
-  statSubtitle: {
-    fontSize: 11,
-    color: "#6B7280",
+  statLabel: {
+    fontSize: 13,
     marginTop: 4,
+    color: "#6B7280",
   },
 
-  /* ================= SETTINGS ================= */
+  /* SETTINGS LIST */
   settingsCard: {
-    marginHorizontal: 18,
-    marginTop: 12,
+    marginHorizontal: 20,
+    marginTop: 24,
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 4,
+    borderRadius: 20,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
   settingItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+  },
+
+  settingLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
   },
 
   settingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#111827",
+    fontWeight: "500",
   },
-
-  statValue: {
-  fontSize: 15,
-  fontWeight: "700",
-  marginTop: 6,
-  color: "#111827",
-},
-
-settingLeft: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 10,
-},
-
-logoutButton: {
-  marginHorizontal: 20,
-  marginTop: 20,
-  backgroundColor: "#FFF1F2",
-  borderRadius: 16,
-  paddingVertical: 14,
-  flexDirection: "row",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: 8,
-},
-
-logoutText: {
-  color: "#EF4444",
-  fontSize: 14,
-  fontWeight: "600",
-},
 });

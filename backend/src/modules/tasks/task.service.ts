@@ -1,4 +1,4 @@
-import { TaskPriority, TaskStatus  } from "@prisma/client";
+import { TaskPriority, TaskStatus } from "@prisma/client";
 import { TaskRepository } from "./task.repository";
 
 export class TaskService {
@@ -8,192 +8,224 @@ export class TaskService {
     this.taskRepository = taskRepository;
   }
 
+  /* ============================= */
+  /* CREATE TASK */
+  /* ============================= */
   async createTask(input: {
+  userId: string;
+  description?: string;
+  categoryId: string;
+  subCategoryId: string;
+  startDate: string;
+  dueDate: string;
+}) {
+  const startDate = new Date(input.startDate);
+  const dueDate = new Date(input.dueDate);
+  const now = new Date();
+
+  const diffInMs = dueDate.getTime() - now.getTime();
+  const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+
+  let priority: TaskPriority;
+
+  if (diffInDays <= 0) {
+    priority = TaskPriority.HIGH;
+  } else if (diffInDays <= 2) {
+    priority = TaskPriority.HIGH;
+  } else if (diffInDays <= 5) {
+    priority = TaskPriority.MEDIUM;
+  } else {
+    priority = TaskPriority.LOW;
+  }
+
+  return this.taskRepository.createWithNotification({
+    userId: input.userId,
+    description: input.description,
+    priority,
+    categoryId: input.categoryId,
+    subCategoryId: input.subCategoryId,
+    startDate,
+    dueDate,
+  });
+}
+
+  /* ============================= */
+  /* UPDATE TASK */
+  /* ============================= */
+
+  async updateTask(
+    taskId: string,
+    userId: string,
+    input: {
+      title?: string;
+      description?: string;
+      priority?: TaskPriority;
+      status?: TaskStatus;
+      categoryId?: string | null;
+      startDate?: string;
+      dueDate?: string;
+      cancelledReason?: string;
+    }
+  ) {
+    const updateData: Record<string, any> = {};
+
+    if (input.title !== undefined) {
+      updateData.title = input.title.trim();
+    }
+
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+
+    if (input.priority !== undefined) {
+      updateData.priority = input.priority;
+    }
+
+    if (input.status !== undefined) {
+      updateData.status = input.status;
+    }
+
+    if (input.categoryId !== undefined) {
+      updateData.categoryId = input.categoryId;
+    }
+
+    if (input.startDate !== undefined) {
+      updateData.startDate = new Date(input.startDate);
+    }
+
+    if (input.dueDate !== undefined) {
+      updateData.dueDate = new Date(input.dueDate);
+    }
+
+    if (input.cancelledReason !== undefined) {
+      updateData.cancelledReason = input.cancelledReason;
+    }
+
+    return this.taskRepository.updateTaskWithNotification(
+      taskId,
+      userId,
+      updateData
+    );
+  }
+
+  /* ============================= */
+  /* GET TASKS */
+  /* ============================= */
+
+  async getTasks(input: {
     userId: string;
-    title: string;
-    description?: string;
+    limit: number;
+    cursor?: string;
+    status?: TaskStatus | "OVERDUE";
     priority?: TaskPriority;
-    startDate: string;
-    dueDate: string;
+    categoryId?: string;
+    startFrom?: string;
+    startTo?: string;
+    dueFrom?: string;
+    dueTo?: string;
   }) {
-    return this.taskRepository.createWithNotification({
+    const now = new Date();
+
+    const defaultStartFrom = new Date();
+    defaultStartFrom.setDate(now.getDate() - 15);
+
+    const filters: any = {
       userId: input.userId,
-      title: input.title.trim(),
-      description: input.description,
-      priority: input.priority ?? TaskPriority.MEDIUM,
-      startDate: new Date(input.startDate),
-      dueDate: new Date(input.dueDate),
+    };
+
+    /* CATEGORY FILTER */
+    if (input.categoryId) {
+      filters.categoryId = input.categoryId;
+    }
+
+    /* STATUS FILTER */
+    if (input.status === "OVERDUE") {
+      filters.status = {
+        in: ["PENDING", "IN_PROGRESS"],
+      };
+
+      filters.dueDate = {
+        lt: now,
+      };
+    } else if (input.status) {
+      filters.status = input.status;
+    }
+
+    /* PRIORITY FILTER */
+    if (input.priority) {
+      filters.priority = input.priority;
+    }
+
+    /* START DATE FILTER */
+    if (input.startFrom || input.startTo) {
+      filters.startDate = {};
+
+      if (input.startFrom) {
+        filters.startDate.gte = new Date(input.startFrom);
+      }
+
+      if (input.startTo) {
+        filters.startDate.lte = new Date(input.startTo);
+      }
+    } else {
+      filters.startDate = {
+        gte: defaultStartFrom,
+      };
+    }
+
+    /* DUE DATE FILTER */
+    if (input.dueFrom || input.dueTo) {
+      filters.dueDate = {
+        ...(filters.dueDate || {}),
+      };
+
+      if (input.dueFrom) {
+        filters.dueDate.gte = new Date(input.dueFrom);
+      }
+
+      if (input.dueTo) {
+        filters.dueDate.lte = new Date(input.dueTo);
+      }
+    }
+
+    return this.taskRepository.getTasks({
+      filters,
+      limit: input.limit,
+      cursor: input.cursor,
     });
   }
 
-  async updateTask(
-  taskId: string,
-  userId: string,
-  input: {
-    title?: string;
-    description?: string;
-    priority?: TaskPriority;
-    status?: any;
-    startDate?: string;
-    dueDate?: string;
-    cancelledReason?: string;
-  }
-) {
-  // Prepare update payload
-  const updateData: any = {};
 
-  if (input.title !== undefined) {
-    updateData.title = input.title.trim();
-  }
-
-  if (input.description !== undefined) {
-    updateData.description = input.description;
-  }
-
-  if (input.priority !== undefined) {
-    updateData.priority = input.priority;
-  }
-
-  if (input.status !== undefined) {
-    updateData.status = input.status;
-  }
-
-  if (input.startDate !== undefined) {
-    updateData.startDate = new Date(input.startDate);
-  }
-
-  if (input.dueDate !== undefined) {
-    updateData.dueDate = new Date(input.dueDate);
-  }
-
-  if (input.cancelledReason !== undefined) {
-    updateData.cancelledReason = input.cancelledReason;
-  }
-
-  return this.taskRepository.updateTaskWithNotification(
-    taskId,
-    userId,
-    updateData
-  );
+  async getTaskSummary(userId: string) {
+  return this.taskRepository.getTaskSummary(userId);
 }
 
-async getTasks(input: {
-  userId: string;
-  limit: number;
-  cursor?: string;
-  status?: TaskStatus | "OVERDUE";
-  priority?: TaskPriority;
-  categoryId?: string;        // ✅ ADD THIS
-  startFrom?: string;
-  startTo?: string;
-  dueFrom?: string;
-  dueTo?: string;
-}) {
-  const now = new Date();
 
-  const defaultStartFrom = new Date();
-  defaultStartFrom.setDate(now.getDate() - 15);
+  /* ============================= */
+  /* CREATE TASK CATEGORY */
+  /* ============================= */
 
-  const filters: any = {
-    userId: input.userId,
-  };
-
-  /*
-   =====================================
-   CATEGORY FILTER
-   =====================================
-  */
-
-  if (input.categoryId) {
-    filters.categoryId = input.categoryId;
+  async createTaskCategory(input: {
+    userId: string;
+    name: string;
+    parentId?: string | null;
+    icon?: string | null;     // ✅ NEW
+    color?: string | null;    // ✅ NEW
+  }) {
+    return this.taskRepository.createTaskCategory({
+      userId: input.userId,
+      name: input.name.trim(),
+      parentId: input.parentId ?? null,
+      icon: input.icon ?? null,
+      color: input.color ?? null,
+    });
   }
 
-  /*
-   =====================================
-   STATUS FILTER (with OVERDUE support)
-   =====================================
-  */
+  /* ============================= */
+  /* GET TASK CATEGORIES */
+  /* ============================= */
 
-  if (input.status === "OVERDUE") {
-    filters.status = {
-      in: ["PENDING", "IN_PROGRESS"],
-    };
-
-    filters.dueDate = {
-      lt: now,
-    };
-  } else if (input.status) {
-    filters.status = input.status;
+  async getTaskCategories(userId: string) {
+    return this.taskRepository.getTaskCategories(userId);
   }
-
-  /*
-   =====================================
-   PRIORITY FILTER
-   =====================================
-  */
-
-  if (input.priority) {
-    filters.priority = input.priority;
-  }
-
-  /*
-   =====================================
-   START DATE FILTER
-   =====================================
-  */
-
-  if (input.startFrom || input.startTo) {
-    filters.startDate = {};
-
-    if (input.startFrom) {
-      filters.startDate.gte = new Date(input.startFrom);
-    }
-
-    if (input.startTo) {
-      filters.startDate.lte = new Date(input.startTo);
-    }
-  } else {
-    // Default: last 15 days
-    filters.startDate = {
-      gte: defaultStartFrom,
-    };
-  }
-
-  /*
-   =====================================
-   DUE DATE FILTER (MERGE SAFE)
-   =====================================
-  */
-
-  if (input.dueFrom || input.dueTo) {
-    filters.dueDate = {
-      ...(filters.dueDate || {}), // keeps overdue condition if present
-    };
-
-    if (input.dueFrom) {
-      filters.dueDate.gte = new Date(input.dueFrom);
-    }
-
-    if (input.dueTo) {
-      filters.dueDate.lte = new Date(input.dueTo);
-    }
-  }
-
-  return this.taskRepository.getTasks({
-    filters,
-    limit: input.limit,
-    cursor: input.cursor,
-  });
-}
-async createTaskCategory(input: {
-  userId: string;
-  name: string;
-  parentId?: string | null;
-}) {
-  return this.taskRepository.createTaskCategory(input);
-}
-
-async getTaskCategories(userId: string) {
-  return this.taskRepository.getTaskCategories(userId);
-}
 }

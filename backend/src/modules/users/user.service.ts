@@ -192,4 +192,27 @@ export class UserService {
       type: NotificationType.SYSTEM,
     });
   }
+
+
+  /* ================= MFA TOGGLE ================= */
+
+async toggleMfa(userId: string, isMfaEnabled: boolean) {
+  const updated =
+    await this.userRepository.updateMfaStatus(
+      userId,
+      isMfaEnabled
+    );
+
+  // 🔔 Create Notification
+  await this.notificationRepository.createNotification({
+    userId,
+    title: "Security Update",
+    message: `Multi-Factor Authentication ${
+      isMfaEnabled ? "enabled" : "disabled"
+    } successfully.`,
+    type: NotificationType.SYSTEM,
+  });
+
+  return updated;
+}
 }

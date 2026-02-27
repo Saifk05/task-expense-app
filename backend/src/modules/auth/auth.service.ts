@@ -13,57 +13,92 @@ import { MESSAGES } from "../../lib/constants/messages";
 import cloudinary from "../../config/cloudinary";
 import streamifier from "streamifier";
 import { prisma } from "../../init/prisma.init";
-
+import { DEFAULT_TASK_CATEGORIES } from "../../lib/utils/default-task-categories";
 import bcrypt from "bcrypt";
 
 class AuthService {
-  async register(data: RegisterInput) {
-    const existingUser = await authRepository.findUserByEmail(data.email);
+async register(data: RegisterInput) {
+  const existingUser = await authRepository.findUserByEmail(data.email);
 
-    if (existingUser) {
-      throw new AppError(
-        MESSAGES.USER.ALREADY_EXISTS,
-        409,
-        ErrorCode.CONFLICT
-      );
-    }
-
-    const passwordHash = await hashPassword(data.password);
-
-    const user = await authRepository.createUser({
-    firstName: data.firstName,
-    lastName: data.lastName,
-    email: data.email,
-    phoneNumber: data.phoneNumber,
-    passwordHash,
-    });
-
-
-    const payload: TokenPayload = {
-      userId: user.id,
-      email: user.email,
-    };
-
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-    // await authRepository.updateRefreshToken(user.id, refreshToken);
-
-    await authRepository.updateRefreshToken(user.id, refreshTokenHash);
-
-    return {
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
-      accessToken,
-      refreshToken,
-    };
+  if (existingUser) {
+    throw new AppError(
+      MESSAGES.USER.ALREADY_EXISTS,
+      409,
+      ErrorCode.CONFLICT
+    );
   }
 
+  const passwordHash = await hashPassword(data.password);
+
+  const user = await prisma.$transaction(async (tx) => {
+    /* ============================= */
+    /* 1️⃣ CREATE USER */
+    /* ============================= */
+    const newUser = await tx.user.create({
+      data: {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim().toLowerCase(),
+        phoneNumber: data.phoneNumber ?? null,
+        passwordHash,
+      },
+    });
+
+    /* ============================= */
+    /* 2️⃣ SEED DEFAULT TASK CATEGORIES (FLAT ONLY) */
+    /* ============================= */
+for (const category of DEFAULT_TASK_CATEGORIES) {
+  const parent = await tx.taskCategory.create({
+    data: {
+      userId: newUser.id,
+      name: category.name.trim(),
+      parentId: null,
+      icon: category.icon ?? null,   // only parent gets icon
+      color: category.color ?? null, // only parent gets color
+    },
+  });
+
+  if (category.subCategories?.length) {
+    for (const sub of category.subCategories) {
+      await tx.taskCategory.create({
+        data: {
+          userId: newUser.id,
+          name: sub.name.trim(),
+          parentId: parent.id,
+        },
+      });
+    }
+  }
+}
+
+    return newUser;
+  });
+
+  /* ============================= */
+  /* 3️⃣ GENERATE TOKENS */
+  /* ============================= */
+  const payload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+  };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  await authRepository.updateRefreshToken(user.id, refreshTokenHash);
+
+  return {
+    user: {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+    accessToken,
+    refreshToken,
+  };
+}
   async login(data: LoginInput) {
     const user = await authRepository.findUserByEmail(data.email);
 

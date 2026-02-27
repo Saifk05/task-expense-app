@@ -25,6 +25,9 @@ model User {
   phoneNumber String?
   gender      Gender?
   dateOfBirth DateTime?
+
+  isMfaEnabled Boolean @default(false)
+  mfaSecret    String?   // for future TOTP support (optional)
   
   address   String?
   building  String?
@@ -76,6 +79,8 @@ model Task {
   startDate   DateTime
   dueDate     DateTime
 
+  completedAt DateTime? 
+
   categoryId String?
   cancelledReason String?
   notifications Notification[]
@@ -84,7 +89,7 @@ model Task {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([userId])
@@ -98,9 +103,11 @@ model TaskCategory {
   userId    String
 
   name      String
-  parentId  String?   // null = main category
+  icon      String?      //  NEW
+  color     String?
+  parentId  String?   // NULL = main category
 
-  parent    TaskCategory?  @relation("TaskCategoryHierarchy", fields: [parentId], references: [id])
+  parent    TaskCategory? @relation("TaskCategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children  TaskCategory[] @relation("TaskCategoryHierarchy")
 
   tasks     Task[]
@@ -108,13 +115,13 @@ model TaskCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([parentId])
-
-  @@unique([userId, name, parentId]) //  Prevent duplicate sibling categories
+  @@index([userId, parentId])
+  @@unique([userId, name, parentId])
 }
+
 
 model Account {
   id       String   @id @default(uuid())

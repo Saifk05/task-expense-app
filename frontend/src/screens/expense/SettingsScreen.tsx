@@ -9,10 +9,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { styles } from "./SettingsScreen.styles";
 import { ApiService } from "../../services/api.service";
 import ConfirmModal from "../../component/ConfirmModal";
-
+import { useNavigation } from "@react-navigation/native";
 interface SettingsScreenProps {
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean | null>>;
 }
@@ -24,11 +25,16 @@ interface SettingItemProps {
   onPress?: () => void;
 }
 
-const Card = ({ icon, value, label }: any) => (
-  <View style={styles.statCard}>
-    <Text style={styles.statIcon}>{icon}</Text>
+const StatCard = ({
+  icon,
+  value,
+  label,
+  bgColor,
+}: any) => (
+  <View style={[styles.statCard, { backgroundColor: bgColor }]}>
+    <Ionicons name={icon as any} size={22} color="#1F2937" />
     <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statSubtitle}>{label}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
   </View>
 );
 
@@ -46,7 +52,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <View style={styles.settingLeft}>
       <Ionicons
         name={icon as any}
-        size={18}
+        size={20}
         color={danger ? "#EF4444" : "#6B7280"}
       />
       <Text
@@ -60,7 +66,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     </View>
 
     {!danger && (
-      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
     )}
   </TouchableOpacity>
 );
@@ -68,6 +74,8 @@ const SettingItem: React.FC<SettingItemProps> = ({
 const SettingsScreen: React.FC<SettingsScreenProps> = ({
   setIsLoggedIn,
 }) => {
+  const navigation = useNavigation<any>();
+
   const [loading, setLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -90,39 +98,74 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 140 }}
       >
-        {/* HEADER */}
-        <View style={styles.header}>
+        {/* 🔥 BLUE GRADIENT HEADER */}
+        <LinearGradient
+          colors={["#60A5FA", "#1D4ED8"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <View style={styles.headerTop}>
             <Ionicons
               name="notifications"
-              size={22}
+              size={30}
               color="#FFD700"
             />
           </View>
 
           <View style={styles.profileRow}>
             <Image
-              source={{
-                uri: "https://i.pravatar.cc/150?img=8",
-              }}
+              source={require("../../../assets/profile-picture.svg")}
               style={styles.avatar}
             />
             <View>
-              <Text style={styles.name}>
-                Alex Morgan
-              </Text>
-              <Text style={styles.email}>
-                alex.morgan@staff.portexa.com
+              <Text style={styles.name}>Alex Morgan</Text>
+              <Text style={styles.subtitle}>
+                Manage your finances
               </Text>
             </View>
           </View>
+        </LinearGradient>
+
+        {/* 📊 TWO STAT CARDS */}
+        <View style={styles.statsGrid}>
+          <StatCard
+            icon="wallet-outline"
+            value="$3,257"
+            label="Total Balance"
+            bgColor="#E0F2FE"
+          />
+          <StatCard
+            icon="pie-chart-outline"
+            value="$950"
+            label="Monthly Expenses"
+            bgColor="#FEF3C7"
+          />
         </View>
 
-        {/* SETTINGS LIST */}
+        {/* ⚙ SETTINGS LIST */}
         <View style={styles.settingsCard}>
           <SettingItem
             icon="person-outline"
-            title="Edit Profile"
+            title="Profile Settings"
+            onPress={() => navigation.navigate("Profile")}
+          />
+
+          <SettingItem
+            icon="wallet-outline"
+            title="Manage Accounts"
+            onPress={() => navigation.navigate("ManageAccounts")}
+          />
+
+          <SettingItem
+            icon="grid-outline"
+            title="Categories"
+          />
+
+          <SettingItem
+            icon="notifications-outline"
+            title="Notifications"
+            onPress={() => navigation.navigate("Notifications")}
           />
 
           <SettingItem
@@ -134,14 +177,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           {loading && (
             <ActivityIndicator
-              style={{ marginTop: 10 }}
+              style={{ marginTop: 12 }}
               color="#EF4444"
             />
           )}
         </View>
       </ScrollView>
 
-      {/* 🔥 CONFIRM MODAL */}
       <ConfirmModal
         visible={showLogoutModal}
         title="Logout"
