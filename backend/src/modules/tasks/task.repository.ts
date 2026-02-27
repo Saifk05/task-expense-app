@@ -195,6 +195,15 @@ async createWithNotification(data: {
         message = `Task "${updatedTask.title}" has been completed.`;
       }
 
+      if (updatedTask.status === TaskStatus.COMPLETED) {
+        await tx.notification.deleteMany({
+          where: {
+            relatedTaskId: taskId,
+            type: NotificationType.TASK_OVERDUE,
+          },
+        });
+      }
+
       if (updatedTask.status === TaskStatus.CANCELLED) {
         message = `Task "${updatedTask.title}" has been cancelled.`;
       }
@@ -315,9 +324,74 @@ async getTaskCategories(userId: string) {
   });
 }
 
+
 async getTaskSummary(userId: string) {
   const now = new Date();
 
+  // 1️⃣ Create overdue notifications (only once per task)
+  const overdueTasksWithoutNotification = await prisma.task.findMany({
+    where: {
+      userId,
+      dueDate: { lt: now },
+      status: {
+        in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS],
+      },
+      notifications: {
+        none: {
+          type: "TASK_OVERDUE",
+        },
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+
+  if (overdueTasksWithoutNotification.length > 0) {
+
+  // 🔥 Auto set priority HIGH for overdue tasks
+  await prisma.task.updateMany({
+    where: {
+      id: {
+        in: overdueTasksWithoutNotification.map(t => t.id),
+      },
+    },
+    data: {
+      priority: TaskPriority.HIGH,
+    },
+  });
+
+  await prisma.notification.createMany({
+    data: overdueTasksWithoutNotification.map((task) => ({
+      userId,
+      title: "Task Overdue",
+      message: `Task "${task.title}" is overdue.`,
+      type: NotificationType.TASK_OVERDUE,
+      deliveryChannel: NotificationChannel.IN_APP,
+      relatedTaskId: task.id,
+      isSent: true,
+      sentAt: now,
+    })),
+  });
+}
+  // if (overdueTasksWithoutNotification.length > 0) {
+  //   await prisma.notification.createMany({
+  //     data: overdueTasksWithoutNotification.map((task) => ({
+  //       userId,
+  //       title: "Task Overdue",
+  //       message: `Task "${task.title}" is overdue.`,
+  //       type: "TASK_OVERDUE",
+  //       deliveryChannel: "IN_APP",
+  //       relatedTaskId: task.id,
+  //       isSent: true,
+  //       sentAt: now,
+  //     })),
+  //   });
+  // }
+
+  // 2️⃣ Run summary queries
   const [
     unreadCount,
     total,
@@ -369,27 +443,17 @@ async getTaskSummary(userId: string) {
         address: true,
         city: true,
         pincode: true,
-        profilePictureUrl: true, 
+        profilePictureUrl: true,
         isMfaEnabled: true,
       },
     }),
-    // prisma.user.findUnique({
-    //   where: { id: userId },
-    //   select: {
-    //     address: true,
-    //     city: true,
-    //     pincode: true,
-    //     phoneNumber: true,
-    //     dateOfBirth: true,
-    //   },
-    // }),
   ]);
 
   const isIncomplete =
     !user ||
     !user.address ||
     !user.city ||
-    !user.pincode 
+    !user.pincode;
 
   return {
     notifications: {
@@ -408,4 +472,98 @@ async getTaskSummary(userId: string) {
     },
   };
 }
+// async getTaskSummary(userId: string) {
+//   const now = new Date();
+
+  
+//   const [
+//     unreadCount,
+//     total,
+//     completed,
+//     pending,
+//     overdue,
+//     user,
+//   ] = await prisma.$transaction([
+//     prisma.notification.count({
+//       where: {
+//         userId,
+//         isRead: false,
+//       },
+//     }),
+
+//     prisma.task.count({
+//       where: { userId },
+//     }),
+
+//     prisma.task.count({
+//       where: {
+//         userId,
+//         status: TaskStatus.COMPLETED,
+//       },
+//     }),
+
+//     prisma.task.count({
+//       where: {
+//         userId,
+//         status: TaskStatus.PENDING,
+//       },
+//     }),
+
+//     prisma.task.count({
+//       where: {
+//         userId,
+//         status: {
+//           in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS],
+//         },
+//         dueDate: {
+//           lt: now,
+//         },
+//       },
+//     }),
+
+//     prisma.user.findUnique({
+//       where: { id: userId },
+//       select: {
+//         address: true,
+//         city: true,
+//         pincode: true,
+//         profilePictureUrl: true, 
+//         isMfaEnabled: true,
+//       },
+//     }),
+//     // prisma.user.findUnique({
+//     //   where: { id: userId },
+//     //   select: {
+//     //     address: true,
+//     //     city: true,
+//     //     pincode: true,
+//     //     phoneNumber: true,
+//     //     dateOfBirth: true,
+//     //   },
+//     // }),
+//   ]);
+
+//   const isIncomplete =
+//     !user ||
+//     !user.address ||
+//     !user.city ||
+//     !user.pincode 
+
+//   return {
+//     notifications: {
+//       unreadCount,
+//     },
+//     profile: {
+//       isIncomplete,
+//       profilePictureUrl: user?.profilePictureUrl ?? null,
+//       mfaEnabled: user?.isMfaEnabled ?? false,
+//     },
+//     tasks: {
+//       total,
+//       completed,
+//       pending,
+//       overdue,
+//     },
+//   };
+// }
 }
