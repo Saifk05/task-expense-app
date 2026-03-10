@@ -149,30 +149,52 @@ const TaskCategoryScreen = ({ navigation }: any) => {
   }
 };
 
-
 const handleDeleteCategories = async () => {
   try {
     setDeleteLoading(true);
 
-    // Simulate delay (remove later when API added)
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    for (const id of selectedToDelete) {
+      await ApiService.deleteTaskCategory(id);
+    }
 
-    const updated = categories.filter(
-      (cat) => !selectedToDelete.includes(cat.id)
-    );
+    showSuccess('Category deleted successfully');
 
-    setCategories(updated);
     setSelectedToDelete([]);
     setDeleteMode(false);
 
-    showSuccess('Category deleted successfully');
+    fetchCategories(); // refresh list
   } catch (error) {
+    console.log(error);
     showError('Failed to delete category');
   } finally {
     setDeleteLoading(false);
     setConfirmVisible(false);
   }
 };
+
+// const handleDeleteCategories = async () => {
+//   try {
+//     setDeleteLoading(true);
+
+//     // Simulate delay (remove later when API added)
+//     await new Promise((resolve) => setTimeout(resolve, 500));
+
+//     const updated = categories.filter(
+//       (cat) => !selectedToDelete.includes(cat.id)
+//     );
+
+//     setCategories(updated);
+//     setSelectedToDelete([]);
+//     setDeleteMode(false);
+
+//     showSuccess('Category deleted successfully');
+//   } catch (error) {
+//     showError('Failed to delete category');
+//   } finally {
+//     setDeleteLoading(false);
+//     setConfirmVisible(false);
+//   }
+// };
 
   // const handleCreateCategory = async () => {
   //   if (!categoryName.trim()) {
@@ -271,9 +293,16 @@ const handleDeleteCategories = async () => {
     showSuccess('Category created successfully');
 
     fetchCategories();
-  } catch (error) {
-    showError('Failed to create category');
+  // } catch (error) {
+  //   showError('Failed to create category');
   }
+  catch (error: any) {
+  const message =
+    error?.response?.data?.message ||
+    'Failed to create category';
+
+  showError(message);
+}
 };
 
 const renderCategory = ({ item }: any) => {
@@ -435,9 +464,13 @@ const renderCategory = ({ item }: any) => {
 
       // Small delay so animation finishes smoothly
       setTimeout(() => {
-        navigation.navigate('CreateTask', {
+        // navigation.navigate('CreateTask', {
+        //   category: selectedCategory,
+        //   subCategory: item,
+        // });
+        navigation.push('CreateTask', {
           category: selectedCategory,
-          subCategory: item,
+          subCategory: item.id,
         });
       }, 200);
     }}

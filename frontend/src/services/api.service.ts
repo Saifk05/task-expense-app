@@ -371,6 +371,13 @@ async getTaskCategories() {
 },
 
 
+// Delete Task Category
+async deleteTaskCategory(id: string) {
+  const response = await api.delete(`/task/category/${id}`);
+  return response.data;
+},
+
+
 // ================= SECURITY =================
 
 async toggleMfa(isMfaEnabled: boolean) {
