@@ -103,9 +103,9 @@ model TaskCategory {
   userId    String
 
   name      String
-  icon      String?      //  NEW
+  icon      String?
   color     String?
-  parentId  String?   // NULL = main category
+  parentId  String?
 
   parent    TaskCategory? @relation("TaskCategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children  TaskCategory[] @relation("TaskCategoryHierarchy")

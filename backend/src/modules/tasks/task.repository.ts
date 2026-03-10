@@ -264,42 +264,109 @@ async createWithNotification(data: {
   // CREATE TASK CATEGORY (WITH ICON + COLOR)
   // =====================================================
 
+  // async createTaskCategory(input: {
+  //   userId: string;
+  //   name: string;
+  //   parentId?: string | null;
+  //   icon?: string | null;
+  //   color?: string | null;
+  // }) {
+
+  //   if (input.parentId) {
+  //     const parent = await prisma.taskCategory.findFirst({
+  //       where: {
+  //         id: input.parentId,
+  //         userId: input.userId,
+  //         parentId: null,
+  //       },
+  //     });
+
+  //     if (!parent) {
+  //       throw new AppError(
+  //         "Invalid parent category",
+  //         400,
+  //         ErrorCode.VALIDATION_ERROR
+  //       );
+  //     }
+  //   }
+
+  //   return prisma.taskCategory.create({
+  //     data: {
+  //       userId: input.userId,
+  //       name: input.name.trim(),
+  //       parentId: input.parentId ?? null,
+  //       icon: input.icon ?? null,
+  //       color: input.color ?? null,
+  //     },
+  //   });
+  // }
+
   async createTaskCategory(input: {
-    userId: string;
-    name: string;
-    parentId?: string | null;
-    icon?: string | null;
-    color?: string | null;
-  }) {
+  userId: string;
+  name: string;
+  parentId?: string | null;
+  icon?: string | null;
+  color?: string | null;
+}) {
+  const normalizedName = input.name.trim();
 
-    if (input.parentId) {
-      const parent = await prisma.taskCategory.findFirst({
-        where: {
-          id: input.parentId,
-          userId: input.userId,
-          parentId: null,
-        },
-      });
+  if (!normalizedName) {
+    throw new AppError(
+      "Category name is required",
+      400,
+      ErrorCode.VALIDATION_ERROR
+    );
+  }
 
-      if (!parent) {
-        throw new AppError(
-          "Invalid parent category",
-          400,
-          ErrorCode.VALIDATION_ERROR
-        );
-      }
-    }
-
-    return prisma.taskCategory.create({
-      data: {
+  if (input.parentId) {
+    const parent = await prisma.taskCategory.findFirst({
+      where: {
+        id: input.parentId,
         userId: input.userId,
-        name: input.name.trim(),
-        parentId: input.parentId ?? null,
-        icon: input.icon ?? null,
-        color: input.color ?? null,
+        parentId: null,
       },
     });
+
+    if (!parent) {
+      throw new AppError(
+        "Invalid parent category",
+        400,
+        ErrorCode.VALIDATION_ERROR
+      );
+    }
   }
+
+  const existingCategory = await prisma.taskCategory.findFirst({
+    where: {
+      userId: input.userId,
+      parentId: input.parentId ?? null,
+      name: {
+        equals: normalizedName,
+        mode: "insensitive",
+      },
+    },
+  });
+
+  if (existingCategory) {
+    throw new AppError(
+      input.parentId
+        ? "Subcategory already exists under this category"
+        : "Category already exists",
+      400,
+      ErrorCode.VALIDATION_ERROR
+    );
+  }
+
+  return prisma.taskCategory.create({
+    data: {
+      userId: input.userId,
+      name: normalizedName,
+      parentId: input.parentId ?? null,
+      icon: input.icon ?? null,
+      color: input.color ?? null,
+    },
+  });
+}
 
   // =====================================================
   // GET TASK CATEGORIES WITH CHILDREN
@@ -566,4 +633,66 @@ async getTaskSummary(userId: string) {
 //     },
 //   };
 // }
+
+// =====================================================
+// DELETE TASK CATEGORY
+// =====================================================
+
+async deleteTaskCategory(categoryId: string, userId: string) {
+  return prisma.$transaction(async (tx) => {
+
+    const category = await tx.taskCategory.findFirst({
+      where: {
+        id: categoryId,
+        userId,
+      },
+      include: {
+        children: true,
+      },
+    });
+
+    if (!category) {
+      throw new AppError("Category not found", 404, ErrorCode.NOT_FOUND);
+    }
+
+    // Collect all category IDs (parent + children)
+    const categoryIds = [
+      category.id,
+      ...category.children.map((child) => child.id),
+    ];
+
+    const activeTasks = await tx.task.count({
+      where: {
+        userId,
+        categoryId: {
+          in: categoryIds,
+        },
+        status: {
+          in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS],
+        },
+      },
+    });
+
+    if (activeTasks > 0) {
+      throw new AppError(
+        "Cannot delete category with active tasks. Complete or cancel tasks first.",
+        400,
+        ErrorCode.VALIDATION_ERROR
+      );
+    }
+
+    await tx.taskCategory.deleteMany({
+      where: {
+        id: {
+          in: categoryIds,
+        },
+      },
+    });
+
+    return {
+      deleted: true,
+      deletedCategoryIds: categoryIds,
+    };
+  });
+}
 }

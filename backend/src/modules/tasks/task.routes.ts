@@ -22,4 +22,6 @@ router.post("/task/category", taskController.createTaskCategory);
 
 router.get("/task/category", taskController.getTaskCategories);
 
+router.delete("/task/category/:id", taskController.deleteTaskCategory);
+
 export default router;

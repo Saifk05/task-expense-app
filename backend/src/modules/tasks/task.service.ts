@@ -1,5 +1,9 @@
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { TaskRepository } from "./task.repository";
+import {
+  generateCategoryIcon,
+  normalizeCategoryName,
+} from "../../lib/utils/category-icon.util";
 
 export class TaskService {
   private taskRepository: TaskRepository;
@@ -206,20 +210,23 @@ export class TaskService {
   /* ============================= */
 
   async createTaskCategory(input: {
-    userId: string;
-    name: string;
-    parentId?: string | null;
-    icon?: string | null;     // ✅ NEW
-    color?: string | null;    // ✅ NEW
-  }) {
-    return this.taskRepository.createTaskCategory({
-      userId: input.userId,
-      name: input.name.trim(),
-      parentId: input.parentId ?? null,
-      icon: input.icon ?? null,
-      color: input.color ?? null,
-    });
-  }
+  userId: string;
+  name: string;
+  parentId?: string | null;
+  icon?: string | null;
+  color?: string | null;
+}) {
+  const normalizedName = normalizeCategoryName(input.name);
+  const resolvedIcon = input.icon?.trim() || generateCategoryIcon(normalizedName);
+
+  return this.taskRepository.createTaskCategory({
+    userId: input.userId,
+    name: normalizedName,
+    parentId: input.parentId ?? null,
+    icon: resolvedIcon,
+    color: input.color ?? null,
+  });
+}
 
   /* ============================= */
   /* GET TASK CATEGORIES */
@@ -227,5 +234,13 @@ export class TaskService {
 
   async getTaskCategories(userId: string) {
     return this.taskRepository.getTaskCategories(userId);
+  }
+
+  /* ============================= */
+  /* DELETE TASK CATEGORY */
+  /* ============================= */
+
+  async deleteTaskCategory(categoryId: string, userId: string) {
+    return this.taskRepository.deleteTaskCategory(categoryId, userId);
   }
 }

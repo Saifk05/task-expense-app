@@ -204,4 +204,37 @@ export class TaskController {
       next(error);
     }
   };
+
+  /* ============================= */
+/* DELETE TASK CATEGORY */
+/* ============================= */
+
+deleteTaskCategory = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const categoryIdParam = req.params.id;
+
+    if (!categoryIdParam || Array.isArray(categoryIdParam)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID",
+      });
+    }
+
+    const deletedCategory = await this.taskService.deleteTaskCategory(
+      categoryIdParam,
+      req.user!.userId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: deletedCategory,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 }
