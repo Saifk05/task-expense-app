@@ -28,33 +28,30 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
   const activeColor = mode === "expense" ? "#3985F7" : "#10B981";
   const isExpense = mode === "expense";
 
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: activeColor,
-        tabBarInactiveTintColor: "#9CA3AF",
-        tabBarStyle: styles.tabBar,
-        tabBarItemStyle: styles.tabItem,
-        tabBarLabelStyle: styles.label,
-        tabBarIconStyle: { margin: 0, padding: 0 },
+return (
+  <Tab.Navigator
+    key={mode}
+    screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarShowLabel: true,
+      tabBarActiveTintColor: activeColor,
+      tabBarInactiveTintColor: "#9CA3AF",
+      tabBarStyle: styles.tabBar,
+      tabBarItemStyle: styles.tabItem,
+      tabBarLabelStyle: styles.label,
+      tabBarIconStyle: { margin: 0, padding: 0 },
 
-        tabBarIcon: ({ color }) => {
-          let iconName: any;
+      tabBarIcon: ({ color }) => {
+        let iconName: any;
 
-          if (route.name === "Home") iconName = "home-outline";
-          if (route.name === "Analytics")
-            iconName = "stats-chart-outline";
-          if (route.name === "Settings")
-            iconName = "settings-outline";
+        if (route.name === "Home") iconName = "home-outline";
+        if (route.name === "Analytics") iconName = "stats-chart-outline";
+        if (route.name === "Settings") iconName = "settings-outline";
 
-          return (
-            <Ionicons name={iconName} size={20} color={color} />
-          );
-        },
-      })}
-    >
+        return <Ionicons name={iconName} size={20} color={color} />;
+      },
+    })}
+  >
       {isExpense ? (
         <>
           <Tab.Screen
