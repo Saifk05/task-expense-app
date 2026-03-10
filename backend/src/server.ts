@@ -81,8 +81,6 @@ server.on("listening", () => {
  * Bootstrap Application
  * -------------------------
  */
-// server.listen(port);
-server.listen(port, "0.0.0.0");
-
+server.listen(port);
 
 export default app;
