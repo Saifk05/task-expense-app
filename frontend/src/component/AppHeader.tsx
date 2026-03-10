@@ -8,6 +8,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMode } from "../context/ModeContext";
+import { Image } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
 
 interface AppHeaderProps {
   title: string;
@@ -29,10 +32,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const primaryColor = isExpense ? "#3985F7" : "#10B981";
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={[styles.wrapper, { backgroundColor: primaryColor }]}
-    >
+    // <SafeAreaView
+    //   edges={["top"]}
+    //   style={[styles.wrapper, { backgroundColor: primaryColor }]}
+    // >
+
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "transparent" }}>
+  <LinearGradient
+    colors={
+      isExpense
+        ? ["#2563EB", "#60A5FA"]   // blue gradient for expense
+        : ["#059669", "#34D399"]   // green gradient for task
+    }
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.wrapper}
+  >
       {/* Top Row */}
       <View style={styles.topRow}>
         <View style={{ flex: 1 }}>
@@ -51,9 +66,25 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           )}
         </View>
 
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <Ionicons name="person-circle" size={34} color="#fff" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+
+<View style={styles.rightSection}>
+  <Image
+    source={
+      isExpense
+        ? require("../../assets/flat-design-gathering-data-business-concept.png")
+        : require("../../assets/hand-drawn-illustrated-people-planning-business.png")
+    }
+    style={styles.dashboardImage}
+    resizeMode="contain"
+  />
+
+  {/* <TouchableOpacity>
+    <Ionicons name="person-circle" size={34} color="#fff" />
+  </TouchableOpacity> */}
+</View>
       </View>
 
       {/* Toggle (Dashboard only) */}
@@ -94,6 +125,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           </TouchableOpacity>
         </View>
       )}
+    </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -162,4 +194,19 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontWeight: "600",
   },
+
+  rightSection: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+
+dashboardImage: {
+  width: 120,
+  height: 110,
+  marginRight: 0,
+  marginBottom:-48
+  // marginTop:8
+}
+
+
 });
