@@ -546,12 +546,23 @@ const weeklyCardColor = getWeeklyCardColor();
       <View style={styles.fabWrapper}>
         {fabOpen && (
           <View style={styles.fabMenu}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.fabPill}
               onPress={() => setFabOpen(false)}
             >
               <Text style={styles.fabPillText}>Create Task</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+              <TouchableOpacity
+                style={styles.fabPill}
+                onPress={() => {
+                  setFabOpen(false);
+                  navigation.navigate("Settings", {
+                    screen: "TaskCategory",
+                  });
+                }}
+              >
+                <Text style={styles.fabPillText}>Create Task</Text>
+              </TouchableOpacity>
           </View>
         )}
 
