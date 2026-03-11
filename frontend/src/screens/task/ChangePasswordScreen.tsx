@@ -144,6 +144,8 @@ const handleChangePassword = async () => {
       {/* Form */}
       <View style={styles.form}>
         {/* Current Password */}
+        <Text style={styles.label}>Current Password</Text>
+
         <View
           style={[
             styles.inputWrapper,
@@ -179,6 +181,8 @@ const handleChangePassword = async () => {
         </View>
 
         {/* New Password */}
+        <Text style={styles.label}>New Password</Text>
+
         <View
           style={[
             styles.inputWrapper,
@@ -211,6 +215,8 @@ const handleChangePassword = async () => {
         </View>
 
         {/* Strength Indicator */}
+        <Text style={styles.label}>Confirm New Password</Text>
+
         {newPassword.length > 0 && (
           <Text
             style={{

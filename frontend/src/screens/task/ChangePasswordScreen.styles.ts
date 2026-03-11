@@ -7,6 +7,13 @@ export default StyleSheet.create({
     backgroundColor: "#F3F4F6",
   },
 
+  label: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 6,
+    fontWeight: "700",
+  },
+
   /* ---------- HEADER ---------- */
   header: {
     backgroundColor: "#10B981",

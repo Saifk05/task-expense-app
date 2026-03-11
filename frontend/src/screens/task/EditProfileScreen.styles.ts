@@ -54,12 +54,16 @@ export default StyleSheet.create({
     borderColor: "#FFFFFF",
   },
 
-  pickerWrapper: {
+pickerWrapper: {
   backgroundColor: "#FFFFFF",
   borderRadius: 12,
   marginBottom: 16,
-  overflow: "hidden",
+  overflow: "visible",   // FIX
+  zIndex: 1000,          // FIX
+  elevation: 10,
 },
+
+
 
 picker: {
   height: 50,
@@ -83,8 +87,11 @@ picker: {
   /* FORM */
   form: {
     paddingHorizontal: 20,
+    zIndex: 100,
+     marginBottom: 120,
   },
 
+  
   label: {
     fontSize: 13,
     marginBottom: 6,

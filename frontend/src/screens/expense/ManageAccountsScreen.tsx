@@ -1,192 +1,106 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  SafeAreaView,
-  TouchableOpacity,
-  FlatList,
-  Modal,
-  TextInput,
-} from "react-native";
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { styles } from "./ManageAccountsScreen.styles";
+import styles from "./ManageAccountsScreen.styles";
 
-interface Account {
-  id: string;
-  name: string;
-  balance: number;
-  icon: string;
-  bgColor: string;
-}
+const accounts = [
+  {
+    id: 1,
+    name: "Credit Card",
+    type: "Visa •••• 4432",
+    balance: 620,
+    icon: "card-outline",
+    color: "#FCA5A5",
+  },
+  {
+    id: 2,
+    name: "Bank Account",
+    type: "HDFC Savings",
+    balance: 2100,
+    icon: "business-outline",
+    color: "#93C5FD",
+  },
+  {
+    id: 3,
+    name: "Cash Wallet",
+    type: "Personal Wallet",
+    balance: 537,
+    icon: "wallet-outline",
+    color: "#A7F3D0",
+  },
+  {
+    id: 4,
+    name: "UPI Wallet",
+    type: "Google Pay",
+    balance: 120,
+    icon: "phone-portrait-outline",
+    color: "#FCD34D",
+  },
+];
+
+const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
 const ManageAccountsScreen = ({ navigation }: any) => {
-  const [showModal, setShowModal] = useState(false);
-  const [accountName, setAccountName] = useState("");
-  const [balance, setBalance] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
-  const accounts: Account[] = [
-    {
-      id: "1",
-      name: "Banks",
-      balance: 3257,
-      icon: "business-outline",
-      bgColor: "#E0F2FE",
-    },
-    {
-      id: "2",
-      name: "Wallets",
-      balance: 950,
-      icon: "wallet-outline",
-      bgColor: "#FEF3C7",
-    },
-    {
-      id: "3",
-      name: "Credit Card",
-      balance: -1200,
-      icon: "card-outline",
-      bgColor: "#FEE2E2",
-    },
-  ];
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <LinearGradient
-        colors={["#60A5FA", "#1D4ED8"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={22} color="#fff" />
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
 
-          <View>
-            <Text style={styles.headerTitle}>Manage Accounts</Text>
-            <Text style={styles.headerSubtitle}>
-              Track your balances
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
+        {/* HEADER */}
+        {/* HEADER */}
+<View style={styles.header}>
 
-      {/* CARDS */}
-      <FlatList
-        data={accounts}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={{ justifyContent: "space-between" }}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: item.bgColor },
-            ]}
-          >
-            <Ionicons
-              name={item.icon as any}
-              size={26}
-              color="#1F2937"
-            />
+  <View style={styles.headerRow}>
 
-            <Text style={styles.cardBalance}>
-              ${item.balance.toLocaleString()}
-            </Text>
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={() => navigation.goBack()}
+    >
+      <Ionicons name="arrow-back" size={20} color="#fff" />
+    </TouchableOpacity>
 
-            <Text style={styles.cardLabel}>
-              {item.name}
-            </Text>
-          </View>
-        )}
-      />
-
-{/* FLOATING BUTTON */}
-<View style={styles.fabContainer}>
-  
-  {/* Floating Menu */}
-  {showMenu && (
-    <View style={styles.fabMenu}>
-      
-      <TouchableOpacity
-        style={styles.fabMenuItem}
-        onPress={() => {
-          setShowMenu(false);
-          setShowModal(true); // open your Add Account modal if needed
-        }}
-      >
-        <Ionicons name="add-circle-outline" size={18} color="#1F2937" />
-        <Text style={styles.fabMenuText}>Add Account</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.fabMenuItem}
-        onPress={() => {
-          setShowMenu(false);
-          console.log("Delete clicked");
-        }}
-      >
-        <Ionicons name="trash-outline" size={18} color="#EF4444" />
-        <Text style={[styles.fabMenuText, { color: "#EF4444" }]}>
-          Delete
-        </Text>
-      </TouchableOpacity>
-
+    <View style={styles.headerText}>
+      <Text style={styles.headerTitle}>Manage Accounts</Text>
+      <Text style={styles.headerSubtitle}>
+        Manage your financial sources
+      </Text>
     </View>
-  )}
 
-  {/* FAB */}
-  <TouchableOpacity
-    style={styles.fab}
-    onPress={() => setShowMenu(!showMenu)}
-  >
-    <Ionicons name="add" size={26} color="#fff" />
-  </TouchableOpacity>
+  </View>
 
 </View>
 
-      {/* ADD ACCOUNT MODAL */}
-      {/* <Modal visible={showModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Account</Text>
-
-            <TextInput
-              placeholder="Account Name"
-              style={styles.input}
-              value={accountName}
-              onChangeText={setAccountName}
-            />
-
-            <TextInput
-              placeholder="Initial Balance"
-              keyboardType="numeric"
-              style={styles.input}
-              value={balance}
-              onChangeText={setBalance}
-            />
-
-            <TouchableOpacity
-              style={styles.saveBtn}
-              onPress={() => setShowModal(false)}
-            >
-              <Text style={styles.saveText}>Add Account</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowModal(false)}
-              style={{ marginTop: 12 }}
-            >
-              <Text style={{ color: "#EF4444" }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+        {/* BALANCE CARD */}
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Total Balance</Text>
+          <Text style={styles.balanceAmount}>${totalBalance}</Text>
         </View>
-      </Modal> */}
-    </SafeAreaView>
+
+        {/* ACCOUNTS */}
+        <Text style={styles.sectionTitle}>Your Accounts</Text>
+
+        {accounts.map((acc) => (
+          <View key={acc.id} style={styles.accountCard}>
+            <View style={[styles.iconCircle, { backgroundColor: acc.color }]}>
+              <Ionicons name={acc.icon as any} size={20} color="#111827" />
+            </View>
+
+            <View style={styles.accountInfo}>
+              <Text style={styles.accountName}>{acc.name}</Text>
+              <Text style={styles.accountType}>{acc.type}</Text>
+            </View>
+
+            <Text style={styles.accountBalance}>${acc.balance}</Text>
+          </View>
+        ))}
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+
+      {/* ADD ACCOUNT BUTTON */}
+      <TouchableOpacity style={styles.addButton}>
+        <Ionicons name="add" size={26} color="#fff" />
+      </TouchableOpacity>
+    </View>
   );
 };
 

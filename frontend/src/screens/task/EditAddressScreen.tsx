@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   ScrollView,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import styles from "./EditAddressScreen.styles";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -61,13 +63,9 @@ const EditAddressScreen: React.FC<Props> = ({ navigation }) => {
       setLocality(data.locality || "");
       setCity(data.city || "");
       setPincode(data.pincode || "");
-    setLatitude(
-    data.latitude ? Number(data.latitude) : undefined
-    );
 
-    setLongitude(
-    data.longitude ? Number(data.longitude) : undefined
-    );
+      setLatitude(data.latitude ? Number(data.latitude) : undefined);
+      setLongitude(data.longitude ? Number(data.longitude) : undefined);
     } catch (error) {
       console.log("Load error", error);
     } finally {
@@ -101,29 +99,22 @@ const EditAddressScreen: React.FC<Props> = ({ navigation }) => {
   /* ---------------- PARSER ---------------- */
 
   const parseAddressFromItem = (item: OlaPrediction) => {
-    const values: string[] =
-      (item?.terms || []).map((t) => t.value);
+    const values: string[] = (item?.terms || []).map((t) => t.value);
 
-    const fullAddress =
-      item?.description || values.join(", ");
+    const fullAddress = item?.description || values.join(", ");
 
     const pin = values.find((v) => /^\d{6}$/.test(v));
-    const pinIndex = pin
-      ? values.findIndex((v) => v === pin)
-      : -1;
+    const pinIndex = pin ? values.findIndex((v) => v === pin) : -1;
 
-    const cityIndex =
-      pinIndex > 0 ? pinIndex - 2 : values.length - 3;
+    const cityIndex = pinIndex > 0 ? pinIndex - 2 : values.length - 3;
 
     const localityIndex = cityIndex - 1;
 
     return {
       fullAddress,
       pin,
-      cityValue:
-        cityIndex >= 0 ? values[cityIndex] : "",
-      localityValue:
-        localityIndex >= 0 ? values[localityIndex] : "",
+      cityValue: cityIndex >= 0 ? values[cityIndex] : "",
+      localityValue: localityIndex >= 0 ? values[localityIndex] : "",
       lat: item?.geometry?.location?.lat,
       lng: item?.geometry?.location?.lng,
     };
@@ -167,8 +158,8 @@ const EditAddressScreen: React.FC<Props> = ({ navigation }) => {
       return false;
     }
 
-    if (building && !/^\d+$/.test(building)) {
-      showError("Building number must be numeric only");
+    if (building && !/^\d{4}$/.test(building)) {
+      showError("Building number must be exactly 4 digits");
       return false;
     }
 
@@ -215,109 +206,130 @@ const EditAddressScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={22} color="#FFF" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>
-          Edit Address
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          Update your delivery location
-        </Text>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.formContainer}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <TextInput
-          style={styles.input}
-          placeholder="Search Address *"
-          value={address}
-          onChangeText={handleSearch}
-        />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={22} color="#FFF" />
+          </TouchableOpacity>
 
-        {searching && (
-          <Text style={styles.searchingText}>
-            Searching...
+          <Text style={styles.headerTitle}>Edit Address</Text>
+          <Text style={styles.headerSubtitle}>
+            Update your delivery location
           </Text>
-        )}
+        </View>
 
-        {showSuggestions && suggestions.length > 0 && (
-          <View style={styles.suggestionContainer}>
-            <FlatList
-              data={suggestions}
-              keyExtractor={(_, index) =>
-                index.toString()
-              }
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.suggestionItem}
-                  onPress={() =>
-                    handleSelectSuggestion(item)
-                  }
-                >
-                  <Text>{item?.description}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        )}
+        {/* <ScrollView
+          contentContainerStyle={styles.formContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        > */}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Building / House No."
-          value={building}
-          keyboardType="numeric"
-          onChangeText={(text) =>
-            setBuilding(text.replace(/[^0-9]/g, ""))
-          }
-        />
+        <ScrollView
+            contentContainerStyle={[
+              styles.formContainer,
+              { paddingBottom: 140 }
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+          {/* Address */}
+          <Text style={styles.label}>Search Address *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Search Address"
+            value={address}
+            onChangeText={handleSearch}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Locality / Area"
-          value={locality}
-          onChangeText={setLocality}
-        />
+          {searching && (
+            <Text style={styles.searchingText}>Searching...</Text>
+          )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="City *"
-          value={city}
-          onChangeText={setCity}
-        />
+          {showSuggestions && suggestions.length > 0 && (
+            <View style={styles.suggestionContainer}>
+              <FlatList
+                data={suggestions}
+                keyExtractor={(_, index) => index.toString()}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.suggestionItem}
+                    onPress={() => handleSelectSuggestion(item)}
+                  >
+                    <Text>{item?.description}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Pincode *"
-          keyboardType="numeric"
-          value={pincode}
-          onChangeText={(text) =>
-            setPincode(text.replace(/[^0-9]/g, ""))
-          }
-          maxLength={6}
-        />
-
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            loading && { opacity: 0.6 },
-          ]}
-          onPress={handleSave}
-          disabled={loading}
-        >
-          <Text style={styles.saveButtonText}>
-            {loading ? "Saving..." : "Save Address"}
+          {/* Building */}
+          <Text style={styles.label}>
+            Building / House No. (Optional)
           </Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TextInput
+            style={styles.input}
+            placeholder="Example: 1023"
+            keyboardType="number-pad"
+            maxLength={4}
+            value={building}
+            onChangeText={(text) =>
+              setBuilding(text.replace(/[^0-9]/g, ""))
+            }
+          />
+
+          {/* Locality */}
+          <Text style={styles.label}>Locality / Area</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Locality"
+            value={locality}
+            onChangeText={setLocality}
+          />
+
+          {/* City */}
+          <Text style={styles.label}>City *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="City"
+            value={city}
+            onChangeText={setCity}
+          />
+
+          {/* Pincode */}
+          <Text style={styles.label}>Pincode *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="6 digit pincode"
+            keyboardType="number-pad"
+            maxLength={6}
+            value={pincode}
+            onChangeText={(text) =>
+              setPincode(text.replace(/[^0-9]/g, ""))
+            }
+          />
+
+          {/* Save Button */}
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              loading && { opacity: 0.6 },
+            ]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            <Text style={styles.saveButtonText}>
+              {loading ? "Saving..." : "Save Address"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

@@ -470,7 +470,7 @@ const renderCategory = ({ item }: any) => {
         // });
         navigation.push('CreateTask', {
           category: selectedCategory,
-          subCategory: item.id,
+          subCategory: item,
         });
       }, 200);
     }}

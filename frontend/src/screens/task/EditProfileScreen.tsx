@@ -126,7 +126,7 @@ const EditProfileScreen = ({ navigation }: any) => {
         await ApiService.uploadProfileImage(formData);
 
       setProfilePicture(
-        response.profilePictureUrl
+        response.data.profilePictureUrl
       );
     } catch (error) {
       console.log("Image upload failed:", error);
@@ -139,7 +139,8 @@ const EditProfileScreen = ({ navigation }: any) => {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        // style={{ overflow: "visible" }} 
       >
         {/* HEADER */}
         <View style={styles.header}>
@@ -280,7 +281,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                 <DateTimePicker
                   value={dateOfBirth || new Date()}
                   mode="date"
-                  display="default"
+                  display="calendar"
                   maximumDate={new Date()}
                   onChange={(event, selectedDate) => {
                     setShowDatePicker(false);

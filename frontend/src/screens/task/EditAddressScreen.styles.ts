@@ -6,6 +6,15 @@ export default StyleSheet.create({
     backgroundColor: "#F5F6FA",
   },
 
+
+  label: {
+  fontSize: 14,
+  fontWeight: "600",
+  color: "#374151",
+  marginBottom: 6,
+  marginTop: 10,
+},
+
   header: {
     backgroundColor: "#20B486",
     paddingTop: 50,

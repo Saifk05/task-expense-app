@@ -11,6 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import styles from "./ProfileScreen.styles";
 import ApiService from "../../services/api.service"; // adjust path if needed
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface Props {
   navigation: any;
@@ -28,9 +30,30 @@ const ProfileScreen: React.FC<Props> = ({
   const blinkAnim = useRef(new Animated.Value(1)).current;
 
   // 🔥 Fetch user overview
-  useEffect(() => {
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     try {
+  //       const response = await ApiService.getUserOverview();
+  //       setUser(response.data);
+  //     } catch (error) {
+  //       console.log("Failed to fetch user overview", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchUser();
+  // }, []);
+
+  
+  // 🚨 Blinking animation if address incomplete
+  
+  
+  useFocusEffect(
+  useCallback(() => {
     const fetchUser = async () => {
       try {
+        setLoading(true);
         const response = await ApiService.getUserOverview();
         setUser(response.data);
       } catch (error) {
@@ -41,10 +64,10 @@ const ProfileScreen: React.FC<Props> = ({
     };
 
     fetchUser();
-  }, []);
+  }, [])
+);
 
-  // 🚨 Blinking animation if address incomplete
-  useEffect(() => {
+useEffect(() => {
     if (user && user.addressComplete === false) {
       Animated.loop(
         Animated.sequence([
