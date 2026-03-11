@@ -146,15 +146,18 @@ model Account {
 
 
 model Category {
-  id       String   @id @default(uuid())
-  userId   String?  // NULL = global category, NOT NULL = user custom
+  id        String   @id @default(uuid())
 
-  name     String
-  type     CategoryType
-  parentId String?
+  userId    String?
+  name      String
+  type      CategoryType
+  parentId  String?
 
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
+  icon      String?     // ✅ ADD THIS
+  color     String?     // ✅ ADD THIS
+
+  parent    Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[]  @relation("CategoryHierarchy")
 
   transactions Transaction[]
   budgets      Budget[]
@@ -165,6 +168,7 @@ model Category {
   @@index([userId])
   @@index([type])
 }
+
 
 model Transaction {
   id        String   @id @default(uuid())

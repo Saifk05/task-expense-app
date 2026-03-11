@@ -1,8 +1,53 @@
 export enum ErrorCode {
+  /* ----------------------------- */
+  /* GENERAL */
+  /* ----------------------------- */
+
   VALIDATION_ERROR = "VALIDATION_ERROR",
   UNAUTHORIZED = "UNAUTHORIZED",
   FORBIDDEN = "FORBIDDEN",
   NOT_FOUND = "NOT_FOUND",
   CONFLICT = "CONFLICT",
   INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
+
+  /* ----------------------------- */
+  /* CATEGORY */
+  /* ----------------------------- */
+
+  CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
+  CATEGORY_ALREADY_EXISTS = "CATEGORY_ALREADY_EXISTS",
+  INVALID_CATEGORY_TYPE = "INVALID_CATEGORY_TYPE",
+  CATEGORY_HAS_TRANSACTIONS = "CATEGORY_HAS_TRANSACTIONS",
+  DEFAULT_CATEGORY_MODIFICATION_FORBIDDEN = "DEFAULT_CATEGORY_MODIFICATION_FORBIDDEN",
+
+  /* ----------------------------- */
+  /* ACCOUNT */
+  /* ----------------------------- */
+
+  ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND",
+  ACCOUNT_INACTIVE = "ACCOUNT_INACTIVE",
+  INSUFFICIENT_ACCOUNT_BALANCE = "INSUFFICIENT_ACCOUNT_BALANCE",
+
+  /* ----------------------------- */
+  /* TRANSACTION / EXPENSE */
+  /* ----------------------------- */
+
+  TRANSACTION_NOT_FOUND = "TRANSACTION_NOT_FOUND",
+  INVALID_TRANSACTION_TYPE = "INVALID_TRANSACTION_TYPE",
+  INVALID_SUBCATEGORY = "INVALID_SUBCATEGORY",
+
+  /* ----------------------------- */
+  /* BUDGET */
+  /* ----------------------------- */
+
+  BUDGET_NOT_FOUND = "BUDGET_NOT_FOUND",
+  BUDGET_ALREADY_EXISTS = "BUDGET_ALREADY_EXISTS",
+  BUDGET_LIMIT_EXCEEDED = "BUDGET_LIMIT_EXCEEDED",
+
+  /* ----------------------------- */
+  /* TASK */
+  /* ----------------------------- */
+
+  TASK_NOT_FOUND = "TASK_NOT_FOUND",
+  TASK_CATEGORY_NOT_FOUND = "TASK_CATEGORY_NOT_FOUND",
 }

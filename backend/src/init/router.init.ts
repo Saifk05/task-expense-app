@@ -5,7 +5,7 @@ import userRoutes from "../modules/users/user.routes";
 import notificationRoutes from "../modules/notification/notification.routes"; 
 import productivityRoutes from "../modules/productivity/productivity.routes";
 import taskDashboardRoutes from "../modules/task-dashboard/task-dashboard.route";
-
+import categoryRoutes from "../modules/expenses/expense.routes"
 
 const router = Router();
 
@@ -19,5 +19,6 @@ router.use(userRoutes);
 router.use(notificationRoutes);
 router.use(productivityRoutes);
 router.use(taskDashboardRoutes);
+router.use(categoryRoutes);
 
 export default router;

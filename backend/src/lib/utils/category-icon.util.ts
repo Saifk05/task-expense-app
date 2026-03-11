@@ -148,6 +148,11 @@
 //     icon: "leaf-outline",
 //   },
 // ];
+import { CategoryType } from "@prisma/client";
+
+/* ------------------------------------------------ */
+/* CATEGORY ICON KEYWORD MATCHING */
+/* ------------------------------------------------ */
 
 const CATEGORY_ICON_KEYWORDS = [
   {
@@ -238,30 +243,22 @@ const FALLBACK_ICONS = [
   "bookmark-outline",
 ];
 
+/* ------------------------------------------------ */
+/* NORMALIZE CATEGORY NAME */
+/* ------------------------------------------------ */
+
 export function normalizeCategoryName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
 }
 
-// export function generateCategoryIcon(name: string): string {
-//   const normalized = normalizeCategoryName(name).toLowerCase();
-
-//   for (const entry of CATEGORY_ICON_KEYWORDS) {
-//     if (entry.keywords.some((keyword) => normalized.includes(keyword))) {
-//       return entry.icon;
-//     }
-//   }
-
-//   const hash = normalized
-//     .split("")
-//     .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-
-//   return FALLBACK_ICONS[hash % FALLBACK_ICONS.length];
-// }
+/* ------------------------------------------------ */
+/* AUTO GENERATE ICON BASED ON NAME */
+/* ------------------------------------------------ */
 
 export function generateCategoryIcon(name: string): string {
   const normalized = normalizeCategoryName(name).toLowerCase();
 
-  let bestMatch = null;
+  let bestMatch: string | null = null;
   let bestScore = 0;
 
   for (const entry of CATEGORY_ICON_KEYWORDS) {
@@ -287,3 +284,184 @@ export function generateCategoryIcon(name: string): string {
 
   return FALLBACK_ICONS[hash % FALLBACK_ICONS.length];
 }
+
+/* ------------------------------------------------ */
+/* DEFAULT TASK CATEGORIES */
+/* ------------------------------------------------ */
+
+export const DEFAULT_TASK_CATEGORIES = [
+  {
+    name: "Work",
+    icon: "briefcase-outline",
+    color: "#93C5FD",
+    subCategories: [
+      { name: "Meetings" },
+      { name: "Deadlines" },
+      { name: "Emails" },
+      { name: "Reports" },
+    ],
+  },
+  {
+    name: "Personal",
+    icon: "person-outline",
+    color: "#FCA5A5",
+    subCategories: [
+      { name: "Shopping" },
+      { name: "Appointments" },
+      { name: "Health" },
+    ],
+  },
+  {
+    name: "Learning",
+    icon: "school-outline",
+    color: "#C4B5FD",
+    subCategories: [
+      { name: "Courses" },
+      { name: "Practice" },
+      { name: "Research" },
+    ],
+  },
+];
+
+/* ------------------------------------------------ */
+/* DEFAULT EXPENSE CATEGORIES */
+/* ------------------------------------------------ */
+
+export const DEFAULT_EXPENSE_CATEGORIES = [
+  {
+    type: CategoryType.INCOME,
+    categories: [
+      {
+        name: "Income",
+        subCategories: [
+          "Salary",
+          "Freelance Income",
+          "Business Income",
+          "Bonus",
+          "Commission",
+          "Interest Income",
+        ],
+      },
+    ],
+  },
+
+  {
+    type: CategoryType.NEED,
+    categories: [
+      {
+        name: "Groceries & Daily Needs",
+        subCategories: [
+          "Vegetables",
+          "Fruits",
+          "Dairy Products",
+          "Rice & Grains",
+          "Cooking Oil",
+          "Snacks",
+          "Beverages",
+        ],
+      },
+      {
+        name: "Household",
+        subCategories: [
+          "House Rent",
+          "Furniture",
+          "Appliances",
+          "Repairs",
+          "Maintenance",
+        ],
+      },
+      {
+        name: "Bills & Utilities",
+        subCategories: [
+          "Electricity Bill",
+          "Water Bill",
+          "Gas Bill",
+          "Internet Bill",
+          "Mobile Recharge",
+        ],
+      },
+      {
+        name: "Transportation",
+        subCategories: [
+          "Fuel",
+          "Taxi",
+          "Bus",
+          "Train",
+          "Vehicle Maintenance",
+        ],
+      },
+      {
+        name: "Health",
+        subCategories: [
+          "Doctor Consultation",
+          "Medicines",
+          "Hospital Charges",
+          "Gym",
+        ],
+      },
+    ],
+  },
+
+  {
+    type: CategoryType.WANT,
+    categories: [
+      {
+        name: "Shopping",
+        subCategories: [
+          "Clothing",
+          "Electronics",
+          "Gifts",
+          "Online Orders",
+        ],
+      },
+      {
+        name: "Entertainment",
+        subCategories: [
+          "Movies",
+          "Dining Out",
+          "Streaming Services",
+          "Events",
+        ],
+      },
+      {
+        name: "Travel",
+        subCategories: [
+          "Flights",
+          "Hotels",
+          "Vacation",
+          "Tours",
+        ],
+      },
+    ],
+  },
+
+  {
+    type: CategoryType.SAVING,
+    categories: [
+      {
+        name: "Savings",
+        subCategories: [
+          "Emergency Fund",
+          "Short Term Savings",
+          "Children Education Fund",
+        ],
+      },
+    ],
+  },
+
+  {
+    type: CategoryType.INVESTMENT,
+    categories: [
+      {
+        name: "Investments",
+        subCategories: [
+          "Stocks",
+          "Mutual Funds",
+          "Crypto",
+          "Gold",
+          "Real Estate",
+        ],
+      },
+    ],
+  },
+];
