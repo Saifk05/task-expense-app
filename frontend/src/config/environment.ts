@@ -2,5 +2,5 @@ export const environment = {
   production: __DEV__ ? false : true,
   apiUrl: __DEV__
     ? "http://localhost:5000/v1/api"
-    : "https://your-production-api.com",
+    : "https://task-expense-app.onrender.com/v1/api",
 };
