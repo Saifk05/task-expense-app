@@ -30,36 +30,39 @@ async register(data: RegisterInput) {
 
   const passwordHash = await hashPassword(data.password);
 
-  // const user = await prisma.$transaction(async (tx) => {
+  const user = await prisma.$transaction(async (tx) => {
+    /* ============================= */
+    /* 1️⃣ CREATE USER */
+    /* ============================= */
+    const newUser = await tx.user.create({
+      data: {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim().toLowerCase(),
+        phoneNumber: data.phoneNumber ?? null,
+        passwordHash,
+      },
+    });
 
-/* 1️⃣ CREATE USER */
-const user = await prisma.user.create({
-  data: {
-    firstName: data.firstName.trim(),
-    lastName: data.lastName.trim(),
-    email: data.email.trim().toLowerCase(),
-    phoneNumber: data.phoneNumber ?? null,
-    passwordHash,
-  },
-});
-
-/* 2️⃣ SEED DEFAULT TASK CATEGORIES */
+    /* ============================= */
+    /* 2️⃣ SEED DEFAULT TASK CATEGORIES (FLAT ONLY) */
+    /* ============================= */
 for (const category of DEFAULT_TASK_CATEGORIES) {
-  const parent = await prisma.taskCategory.create({
+  const parent = await tx.taskCategory.create({
     data: {
-      userId: user.id,
+      userId: newUser.id,
       name: category.name.trim(),
       parentId: null,
-      icon: category.icon ?? null,
-      color: category.color ?? null,
+      icon: category.icon ?? null,   // only parent gets icon
+      color: category.color ?? null, // only parent gets color
     },
   });
 
   if (category.subCategories?.length) {
     for (const sub of category.subCategories) {
-      await prisma.taskCategory.create({
+      await tx.taskCategory.create({
         data: {
-          userId: user.id,
+          userId: newUser.id,
           name: sub.name.trim(),
           parentId: parent.id,
         },
@@ -68,48 +71,8 @@ for (const category of DEFAULT_TASK_CATEGORIES) {
   }
 }
 
-//   /* ============================= */
-//     /* 1️⃣ CREATE USER */
-//     /* ============================= */
-//     const newUser = await tx.user.create({
-//       data: {
-//         firstName: data.firstName.trim(),
-//         lastName: data.lastName.trim(),
-//         email: data.email.trim().toLowerCase(),
-//         phoneNumber: data.phoneNumber ?? null,
-//         passwordHash,
-//       },
-//     });
-
-//     /* ============================= */
-//     /* 2️⃣ SEED DEFAULT TASK CATEGORIES (FLAT ONLY) */
-//     /* ============================= */
-// for (const category of DEFAULT_TASK_CATEGORIES) {
-//   const parent = await tx.taskCategory.create({
-//     data: {
-//       userId: newUser.id,
-//       name: category.name.trim(),
-//       parentId: null,
-//       icon: category.icon ?? null,   // only parent gets icon
-//       color: category.color ?? null, // only parent gets color
-//     },
-//   });
-
-//   if (category.subCategories?.length) {
-//     for (const sub of category.subCategories) {
-//       await tx.taskCategory.create({
-//         data: {
-//           userId: newUser.id,
-//           name: sub.name.trim(),
-//           parentId: parent.id,
-//         },
-//       });
-//     }
-//   }
-// }
-
-//     return newUser;
-//   });
+    return newUser;
+  });
 
   /* ============================= */
   /* 3️⃣ GENERATE TOKENS */
