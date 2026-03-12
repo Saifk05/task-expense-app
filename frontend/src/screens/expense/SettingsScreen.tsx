@@ -160,6 +160,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <SettingItem
             icon="grid-outline"
             title="Categories"
+            onPress={() => navigation.navigate("Categories")}
           />
 
           <SettingItem

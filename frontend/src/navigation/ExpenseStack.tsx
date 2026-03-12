@@ -8,6 +8,7 @@ import AddressScreen from "../screens/expense/AddressScreen";
 import ChangePasswordScreen from "../screens/expense/ChangePasswordScreen";
 import NotificationScreen from "../screens/expense/NotificationScreen";
 import ManageAccountsScreen from "../screens/expense/ManageAccountsScreen";
+import CategoryScreen from "../screens/expense/CategoryScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -64,6 +65,12 @@ const ExpenseStack: React.FC<Props> = ({ setIsLoggedIn }) => {
       <Stack.Screen
         name="ManageAccounts"
         component={ManageAccountsScreen}
+      />
+
+      {/*Manage Categories Screen */}
+      <Stack.Screen
+        name="Categories"
+        component={CategoryScreen}
       />
 
     </Stack.Navigator>
