@@ -45,86 +45,94 @@ export class TransactionRepository {
   /* ------------------------------------------------ */
 
   static async getTransactions(
-    userId: string,
-    filters: TransactionFilters,
-    pagination: PaginationOptions
-  ) {
-    const where: Prisma.TransactionWhereInput = {
-      userId,
-    };
+  userId: string,
+  filters: TransactionFilters,
+  pagination: PaginationOptions
+) {
+  const where: Prisma.TransactionWhereInput = {
+    userId,
+  };
 
-    if (filters.accountId) {
-      where.accountId = filters.accountId;
-    }
-
-    if (filters.categoryId) {
-      where.categoryId = filters.categoryId;
-    }
-
-    if (filters.type) {
-      where.type = filters.type;
-    }
-
-    if (filters.startDate || filters.endDate) {
-      where.transactionDate = {};
-
-      if (filters.startDate) {
-        where.transactionDate.gte = filters.startDate;
-      }
-
-      if (filters.endDate) {
-        where.transactionDate.lte = filters.endDate;
-      }
-    }
-
-    if (filters.minAmount || filters.maxAmount) {
-      where.totalAmount = {};
-
-      if (filters.minAmount) {
-        where.totalAmount.gte = filters.minAmount;
-      }
-
-      if (filters.maxAmount) {
-        where.totalAmount.lte = filters.maxAmount;
-      }
-    }
-
-    if (filters.search) {
-      where.OR = [
-        {
-          title: {
-            contains: filters.search,
-            mode: "insensitive",
-          },
-        },
-        {
-          description: {
-            contains: filters.search,
-            mode: "insensitive",
-          },
-        },
-      ];
-    }
-
-    const transactions = await prisma.transaction.findMany({
-      where,
-      orderBy: {
-        transactionDate: "desc",
-      },
-      take: pagination.limit ?? 10,
-      skip: pagination.cursor ? 1 : 0,
-      cursor: pagination.cursor
-        ? { id: pagination.cursor }
-        : undefined,
-
-      include: {
-        account: true,
-        category: true,
-      },
-    });
-
-    return transactions;
+  if (filters.accountId) {
+    where.accountId = filters.accountId;
   }
+
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId;
+  }
+
+  if (filters.type) {
+    where.type = filters.type;
+  }
+
+  if (filters.startDate || filters.endDate) {
+    where.transactionDate = {};
+
+    if (filters.startDate) {
+      where.transactionDate.gte = filters.startDate;
+    }
+
+    if (filters.endDate) {
+      where.transactionDate.lte = filters.endDate;
+    }
+  }
+
+  if (filters.minAmount || filters.maxAmount) {
+    where.totalAmount = {};
+
+    if (filters.minAmount) {
+      where.totalAmount.gte = new Prisma.Decimal(filters.minAmount);
+    }
+
+    if (filters.maxAmount) {
+      where.totalAmount.lte = new Prisma.Decimal(filters.maxAmount);
+    }
+  }
+
+  if (filters.search) {
+    where.OR = [
+      {
+        title: {
+          contains: filters.search,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: filters.search,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where,
+    orderBy: [
+      { transactionDate: "desc" },
+      { id: "desc" },
+    ],
+    take: pagination.limit ?? 10,
+    skip: pagination.cursor ? 1 : 0,
+    cursor: pagination.cursor
+      ? { id: pagination.cursor }
+      : undefined,
+    include: {
+      account: true,
+      category: true,
+    },
+  });
+
+  const nextCursor =
+    transactions.length === (pagination.limit ?? 10)
+      ? transactions[transactions.length - 1].id
+      : undefined;
+
+  return {
+    data: transactions,
+    nextCursor,
+  };
+}
 
   /* ------------------------------------------------ */
   /* UPDATE TRANSACTION */

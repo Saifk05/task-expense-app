@@ -24,6 +24,8 @@ export interface UpdateTransactionInput {
   categoryId?: string;
   accountId?: string;
 
+  type?: TransactionType;
+
   quantity?: number;
   unitPrice?: number;
   totalAmount?: number;

@@ -11,9 +11,16 @@ import { TransactionType } from "@prisma/client";
 
 export class TransactionService {
 
-  /* ------------------------------------------------ */
-  /* CREATE TRANSACTION */
-  /* ------------------------------------------------ */
+  private static calculateAmount(
+    quantity?: number,
+    unitPrice?: number,
+    total?: number
+  ) {
+    if (quantity && unitPrice) {
+      return quantity * unitPrice;
+    }
+    return total ?? 0;
+  }
 
   static async createTransaction(input: CreateTransactionInput) {
 
@@ -29,11 +36,11 @@ export class TransactionService {
       throw new Error(ErrorCode.FORBIDDEN);
     }
 
-    let totalAmount = input.totalAmount;
-
-    if (input.quantity && input.unitPrice) {
-      totalAmount = input.quantity * input.unitPrice;
-    }
+    const totalAmount = this.calculateAmount(
+      input.quantity,
+      input.unitPrice,
+      input.totalAmount
+    );
 
     const result = await prisma.$transaction(async (tx) => {
 
@@ -51,8 +58,6 @@ export class TransactionService {
           transactionDate: input.transactionDate,
         },
       });
-
-      /* ACCOUNT BALANCE UPDATE */
 
       if (input.type === TransactionType.EXPENSE) {
         await tx.account.update({
@@ -82,10 +87,6 @@ export class TransactionService {
     return result;
   }
 
-  /* ------------------------------------------------ */
-  /* GET TRANSACTIONS */
-  /* ------------------------------------------------ */
-
   static async getTransactions(
     userId: string,
     filters: TransactionFilters,
@@ -94,32 +95,106 @@ export class TransactionService {
     return TransactionRepository.getTransactions(userId, filters, pagination);
   }
 
-  /* ------------------------------------------------ */
-  /* UPDATE TRANSACTION */
-  /* ------------------------------------------------ */
-
   static async updateTransaction(
     id: string,
     userId: string,
     data: UpdateTransactionInput
   ) {
 
-    const transaction = await TransactionRepository.findById(id);
+    const existingTransaction = await TransactionRepository.findById(id);
 
-    if (!transaction) {
+    if (!existingTransaction) {
       throw new Error(ErrorCode.TRANSACTION_NOT_FOUND);
     }
 
-    if (transaction.userId !== userId) {
+    if (existingTransaction.userId !== userId) {
       throw new Error(ErrorCode.FORBIDDEN);
     }
 
-    return TransactionRepository.updateTransaction(id, data);
-  }
+    if (data.accountId) {
+      const account = await prisma.account.findUnique({
+        where: { id: data.accountId },
+      });
 
-  /* ------------------------------------------------ */
-  /* DELETE TRANSACTION */
-  /* ------------------------------------------------ */
+      if (!account) {
+        throw new Error(ErrorCode.ACCOUNT_NOT_FOUND);
+      }
+
+      if (account.userId !== userId) {
+        throw new Error(ErrorCode.FORBIDDEN);
+      }
+    }
+
+    const newAccountId = data.accountId ?? existingTransaction.accountId;
+    const newType = data.type ?? existingTransaction.type;
+
+    const newTotalAmount = this.calculateAmount(
+      data.quantity,
+      data.unitPrice,
+      data.totalAmount ?? Number(existingTransaction.totalAmount)
+    );
+
+    const oldTotalAmount = Number(existingTransaction.totalAmount);
+
+    const result = await prisma.$transaction(async (tx) => {
+
+      if (existingTransaction.type === TransactionType.EXPENSE) {
+        await tx.account.update({
+          where: { id: existingTransaction.accountId },
+          data: {
+            balance: {
+              increment: oldTotalAmount,
+            },
+          },
+        });
+      }
+
+      if (existingTransaction.type === TransactionType.INCOME) {
+        await tx.account.update({
+          where: { id: existingTransaction.accountId },
+          data: {
+            balance: {
+              decrement: oldTotalAmount,
+            },
+          },
+        });
+      }
+
+      const updatedTransaction = await tx.transaction.update({
+        where: { id },
+        data: {
+          ...data,
+          totalAmount: newTotalAmount,
+        },
+      });
+
+      if (newType === TransactionType.EXPENSE) {
+        await tx.account.update({
+          where: { id: newAccountId },
+          data: {
+            balance: {
+              decrement: newTotalAmount,
+            },
+          },
+        });
+      }
+
+      if (newType === TransactionType.INCOME) {
+        await tx.account.update({
+          where: { id: newAccountId },
+          data: {
+            balance: {
+              increment: newTotalAmount,
+            },
+          },
+        });
+      }
+
+      return updatedTransaction;
+    });
+
+    return result;
+  }
 
   static async deleteTransaction(id: string, userId: string) {
 
@@ -133,6 +208,39 @@ export class TransactionService {
       throw new Error(ErrorCode.FORBIDDEN);
     }
 
-    return TransactionRepository.deleteTransaction(id);
+    const amount = Number(transaction.totalAmount);
+
+    const result = await prisma.$transaction(async (tx) => {
+
+      if (transaction.type === TransactionType.EXPENSE) {
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: {
+            balance: {
+              increment: amount,
+            },
+          },
+        });
+      }
+
+      if (transaction.type === TransactionType.INCOME) {
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: {
+            balance: {
+              decrement: amount,
+            },
+          },
+        });
+      }
+
+      await tx.transaction.delete({
+        where: { id },
+      });
+
+      return true;
+    });
+
+    return result;
   }
 }

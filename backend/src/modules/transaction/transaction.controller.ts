@@ -35,7 +35,7 @@ export class TransactionController {
         transactionDate: new Date(parsed.transactionDate),
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: transaction,
       });
@@ -80,7 +80,7 @@ export class TransactionController {
         pagination
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: transactions,
       });
@@ -102,23 +102,22 @@ export class TransactionController {
     try {
 
       const { id } = transactionIdParamSchema.parse(req.params);
+      const parsed = updateTransactionSchema.parse(req.body);
 
-        const parsed = updateTransactionSchema.parse(req.body);
-
-        const updateData = {
+      const updateData = {
         ...parsed,
         transactionDate: parsed.transactionDate
-            ? new Date(parsed.transactionDate)
-            : undefined,
-        };
+          ? new Date(parsed.transactionDate)
+          : undefined,
+      };
 
-        const transaction = await TransactionService.updateTransaction(
+      const transaction = await TransactionService.updateTransaction(
         id,
         req.user!.userId,
         updateData
-        );
+      );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: transaction,
       });
@@ -146,7 +145,7 @@ export class TransactionController {
         req.user!.userId
       );
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Transaction deleted successfully",
       });

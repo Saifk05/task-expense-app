@@ -8,6 +8,7 @@ import taskDashboardRoutes from "../modules/task-dashboard/task-dashboard.route"
 import categoryRoutes from "../modules/expenses/expense.routes"
 import accountRoutes from "../modules/account/account.routes";
 import transactionRoutes from "../modules/transaction/transaction.routes";
+import budgetRoutes from "../modules/budget/budget.routes";
 
 
 const router = Router();
@@ -26,6 +27,7 @@ router.use(taskDashboardRoutes);
 router.use(categoryRoutes);
 router.use(accountRoutes);
 router.use(transactionRoutes);
+router.use(budgetRoutes);
 
 
 export default router;
