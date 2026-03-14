@@ -453,6 +453,107 @@ async getInProgressTasks(cursor?: string, limit: number = 10) {
   return response.data;
 },
 
+// ================= EXPENSE CATEGORIES =================
+
+// Create Category
+// async createCategory(data: {
+//   name: string;
+//   type: "INCOME" | "EXPENSE";
+//   icon?: string;
+//   color?: string;
+// }) {
+//   const response = await api.post("/categories", data);
+//   return response.data;
+// },
+
+
+async createCategory(data: {
+  name: string;
+}) {
+  const response = await api.post("/categories", data);
+  return response.data;
+},
+
+// Create SubCategory
+async createSubCategory(
+  categoryId: string,
+  data: {
+    name: string;
+    icon?: string;
+    color?: string;
+  }
+) {
+  const response = await api.post(
+    `/categories/${categoryId}/subcategories`,
+    data
+  );
+
+  return response.data;
+},
+
+// Get Category Tree
+async getCategories() {
+  const response = await api.get("/categories");
+  return response.data;
+},
+
+// Update Category
+async updateCategory(
+  id: string,
+  data: {
+    name?: string;
+    icon?: string;
+    color?: string;
+  }
+) {
+  const response = await api.patch(`/categories/${id}`, data);
+  return response.data;
+},
+
+// Delete Category
+async deleteCategory(id: string) {
+  const response = await api.delete(`/categories/${id}`);
+  return response.data;
+},
+
+
+// ================= ACCOUNTS =================
+
+// Get All Accounts
+async getAccounts() {
+  const response = await api.get("/accounts");
+  return response.data;
+},
+
+// Create Account
+async createAccount(data: {
+  name: string;
+  type?: string;
+  balance?: number;
+}) {
+  const response = await api.post("/accounts", data);
+  return response.data;
+},
+
+// Update Account
+async updateAccount(
+  id: string,
+  data: {
+    name?: string;
+    type?: string;
+    balance?: number;
+  }
+) {
+  const response = await api.patch(`/accounts/${id}`, data);
+  return response.data;
+},
+
+// Delete Account
+async deleteAccount(id: string) {
+  const response = await api.delete(`/accounts/${id}`);
+  return response.data;
+},
+
 };
 
 export default ApiService;

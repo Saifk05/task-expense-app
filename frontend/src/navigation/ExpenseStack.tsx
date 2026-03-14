@@ -7,8 +7,10 @@ import ExpenseEditProfileScreen from "../screens/expense/EditProfileScreen";
 import AddressScreen from "../screens/expense/AddressScreen";
 import ChangePasswordScreen from "../screens/expense/ChangePasswordScreen";
 import NotificationScreen from "../screens/expense/NotificationScreen";
-import ManageAccountsScreen from "../screens/expense/ManageAccountsScreen";
-import CategoryScreen from "../screens/expense/CategoryScreen";
+import ManageAccountsScreen from "../screens/expense/account/ManageAccountsScreen";
+import CategoryScreen from "../screens/expense/category/CategoryScreen";
+import CreateCategoryScreen from "../screens/expense/category/CreateCategoryScreen"
+import CreateAccountScreen from "../screens/expense/account/CreateAccountScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -71,6 +73,16 @@ const ExpenseStack: React.FC<Props> = ({ setIsLoggedIn }) => {
       <Stack.Screen
         name="Categories"
         component={CategoryScreen}
+      />
+
+      <Stack.Screen
+        name="AddCategory"
+        component={CreateCategoryScreen}
+      />
+
+       <Stack.Screen
+        name="AddAccount"
+        component={CreateAccountScreen}
       />
 
     </Stack.Navigator>
