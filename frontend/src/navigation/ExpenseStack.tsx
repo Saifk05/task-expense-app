@@ -11,7 +11,8 @@ import ManageAccountsScreen from "../screens/expense/account/ManageAccountsScree
 import CategoryScreen from "../screens/expense/category/CategoryScreen";
 import CreateCategoryScreen from "../screens/expense/category/CreateCategoryScreen"
 import CreateAccountScreen from "../screens/expense/account/CreateAccountScreen";
-
+import ManageTransactionsScreen from "../screens/expense/transaction/ManageTransactionsScreen";
+import CreateTransactionScreen from "../screens/expense/transaction/CreateTransactionScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -84,6 +85,17 @@ const ExpenseStack: React.FC<Props> = ({ setIsLoggedIn }) => {
         name="AddAccount"
         component={CreateAccountScreen}
       />
+
+      <Stack.Screen
+        name="CreateTransaction"
+        component={CreateTransactionScreen}
+      />
+
+      <Stack.Screen
+        name="ManageTransactions"
+        component={ManageTransactionsScreen}
+      />
+
 
     </Stack.Navigator>
   );

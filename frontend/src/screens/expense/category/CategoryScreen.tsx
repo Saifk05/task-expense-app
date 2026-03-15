@@ -18,6 +18,8 @@ import AppDropdown from "../../../component/AppDropdown";
 import styles from "./CategoryScreen.styles";
 import ApiService from "../../../services/api.service";
 import ConfirmModal from "../../../component/ConfirmModal";
+import { showSuccess, showError } from "../../../utils/notification.util";
+
 
 const CategoryScreen = ({ navigation }: any) => {
 
@@ -60,6 +62,7 @@ const CategoryScreen = ({ navigation }: any) => {
       setCategories(res.data || []);
     } catch (err) {
       console.log("Category fetch error", err);
+      showError("Failed to load categories");
     } finally {
       setLoading(false);
     }
@@ -111,6 +114,7 @@ const CategoryScreen = ({ navigation }: any) => {
         await ApiService.deleteCategory(id);
       }
 
+      showSuccess("Category deleted successfully");
       setConfirmVisible(false);
       setDeleteMode(false);
       setSelectedIds([]);
@@ -120,6 +124,7 @@ const CategoryScreen = ({ navigation }: any) => {
     } catch (err) {
 
       console.log("Delete error", err);
+      showError("Failed to delete category");
 
     } finally {
 
@@ -132,8 +137,10 @@ const CategoryScreen = ({ navigation }: any) => {
 
   const handleCreateCategory = async () => {
 
-  if (!newCategoryName.trim()) return;
-
+  if (!newCategoryName.trim()) {
+      showError("Category name is required");
+    return;  
+  }
   try {
 
     const payload: any = {
@@ -145,7 +152,7 @@ const CategoryScreen = ({ navigation }: any) => {
     }
 
     await ApiService.createCategory(payload);
-
+    showSuccess("Category created successfully");
     setNewCategoryName("");
     setCategoryType(null);
     setAddCategoryVisible(false);
@@ -154,6 +161,7 @@ const CategoryScreen = ({ navigation }: any) => {
 
   } catch (err) {
     console.log("Create category error", err);
+    showError("Failed to create category");
   }
 
 };
@@ -220,30 +228,41 @@ const CategoryScreen = ({ navigation }: any) => {
 
   const renderSubCategory = ({ item }: any) => (
 
-    <TouchableOpacity
-      style={styles.subCard}
-      onPress={() =>
-        navigation.navigate("AddExpense", {
-          category: selectedCategory,
-          subCategory: item,
-        })
-      }
-    >
+  <TouchableOpacity
+    style={styles.subCard}
+    onPress={() => {
 
-      <View style={styles.subIcon}>
-        <Ionicons
-          name={item.icon as any}
-          size={20}
-          color="#3985F7"
-        />
-      </View>
+        showSuccess(`Creating expense under ${item.name}`);
 
-      <Text style={styles.subText}>
-        {item.name}
-      </Text>
+      closeSheet();   // CLOSE MODAL FIRST
 
-    </TouchableOpacity>
-  );
+      navigation.navigate("CreateTransaction", {
+        categoryId: selectedCategory.id,
+        subCategoryId: item.id,
+        categoryName: selectedCategory.name,
+        subCategoryName: item.name,
+        icon: item.icon,
+        color: item.color,
+      });
+
+    }}
+  >
+
+    <View style={styles.subIcon}>
+      <Ionicons
+        name={item.icon as any}
+        size={20}
+        color="#3985F7"
+      />
+    </View>
+
+    <Text style={styles.subText}>
+      {item.name}
+    </Text>
+
+  </TouchableOpacity>
+
+);
 
   return (
 
@@ -289,7 +308,6 @@ const CategoryScreen = ({ navigation }: any) => {
 
       {/* ================= DELETE BAR ================= */}
 
-      {/* ================= DELETE BAR ================= */}
 
 {deleteMode && (
   <View style={styles.deleteBar}>

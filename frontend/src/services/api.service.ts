@@ -5,6 +5,10 @@ import axios, {
 } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { environment } from "../config/environment";
+import { CreateTransactionPayload } from "../services/types/transaction.types";
+import { UpdateTransactionPayload } from "../services/types/transaction.types";
+
+
 
 interface FailedRequest {
   resolve: (token: string) => void;
@@ -551,6 +555,42 @@ async updateAccount(
 // Delete Account
 async deleteAccount(id: string) {
   const response = await api.delete(`/accounts/${id}`);
+  return response.data;
+},
+
+
+// ================= TRANSACTIONS =================
+
+// Create Transaction
+async createTransaction(data: CreateTransactionPayload) {
+  const response = await api.post("/transactions", data);
+  return response.data;
+},
+
+// Get Transactions
+async getTransactions(params?: {
+  cursor?: string;
+  limit?: number;
+  accountId?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const response = await api.get("/transactions", {
+    params,
+  });
+  return response.data;
+},
+
+// Update Transaction
+async updateTransaction(id: string, data: UpdateTransactionPayload) {
+  const response = await api.patch(`/transactions/${id}`, data);
+  return response.data;
+},
+
+// Delete Transaction
+async deleteTransaction(id: string) {
+  const response = await api.delete(`/transactions/${id}`);
   return response.data;
 },
 

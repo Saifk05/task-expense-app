@@ -164,9 +164,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
 
           <SettingItem
-            icon="notifications-outline"
-            title="Notifications"
-            onPress={() => navigation.navigate("Notifications")}
+            icon="receipt-outline"
+            title="Transactions"
+            onPress={() => navigation.navigate("ManageTransactions")}
           />
 
           <SettingItem
