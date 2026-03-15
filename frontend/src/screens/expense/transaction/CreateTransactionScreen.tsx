@@ -6,18 +6,18 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView,
   TouchableOpacity
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { showSuccess, showError, showWarning } from "../../../utils/notification.util";
 
 import styles from "./CreateTransactionScreen.styles";
 import ApiService from "../../../services/api.service";
 import AppDropdown from "../../../component/AppDropdown";
+import AppDatePicker from "../../../component/AppDatePicker";
 
 import { CreateTransactionPayload } from "../../../services/types/transaction.types";
 
@@ -32,17 +32,18 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
     color
   } = route.params || {};
 
-  const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
 
+  const [useQuantity, setUseQuantity] = useState(false);
+  const [quantity, setQuantity] = useState("1");
+  const [unitPrice, setUnitPrice] = useState("");
+
   const [date, setDate] = useState(new Date());
   const [categoryType, setCategoryType] = useState<string | null>(null);
-
-  /* ================= LOAD ACCOUNTS ================= */
 
   useEffect(() => {
     loadAccounts();
@@ -71,8 +72,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
     }
   };
 
-  /* ================= DROPDOWN OPTIONS ================= */
-
   const accountOptions = accounts.map((acc: any) => ({
     label: acc.name,
     value: acc.id
@@ -87,39 +86,19 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
     { label: "Income", value: "INCOME" },
   ];
 
-  /* ================= OPEN CALENDAR ================= */
-
-  const openCalendar = () => {
-
-    DateTimePickerAndroid.open({
-      value: date,
-      mode: "date",
-      display: "default",
-      is24Hour: true,
-      onChange: (event, selectedDate) => {
-
-        if (event.type === "dismissed") return;
-
-        if (selectedDate) {
-          setDate(selectedDate);
-        }
-
-      }
-    });
-
-  };
-
-  /* ================= SAVE TRANSACTION ================= */
+  const totalAmount = useQuantity
+    ? Number(quantity || 0) * Number(unitPrice || 0)
+    : Number(unitPrice || 0);
 
   const handleSave = async () => {
 
-    if (!amount || Number(amount) <= 0) {
-      Alert.alert("Validation", "Enter amount");
+    if (!unitPrice || Number(unitPrice) <= 0) {
+      showWarning("Validation", "Enter amount");
       return;
     }
 
     if (!selectedAccount) {
-      Alert.alert("Validation", "Select account");
+      showWarning("Validation", "Select account");
       return;
     }
 
@@ -133,25 +112,28 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
         title: (subCategoryName || categoryName || "Transaction") as string,
         description: note || "",
         type: "EXPENSE",
-        quantity: 1,
-        unitPrice: Number(amount),
-        totalAmount: Number(amount),
+        quantity: useQuantity ? Number(quantity) : 1,
+        unitPrice: Number(unitPrice),
+        totalAmount: totalAmount,
         transactionDate: date.toISOString(),
       };
 
-      console.log("Transaction payload:", payload);
-
       await ApiService.createTransaction(payload);
 
-      Alert.alert("Success", "Transaction added");
+      showSuccess("Success", "Transaction added");
 
       navigation.goBack();
 
-    } catch (error) {
+    } catch (error: any) {
 
-      console.log("Transaction error:", error);
+      const message =
+        error?.response?.data?.message || "Failed to create transaction";
 
-      Alert.alert("Error", "Failed to create transaction");
+      if (message === "INSUFFICIENT_BALANCE") {
+        showError("Transaction Failed", "Insufficient account balance");
+      } else {
+        showError("Error", message);
+      }
 
     } finally {
 
@@ -164,8 +146,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
   return (
 
     <SafeAreaView style={styles.container}>
-
-      {/* HEADER */}
 
       <LinearGradient
         colors={["#3985F7", "#5AA9FF"]}
@@ -197,8 +177,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
 
       </LinearGradient>
 
-      {/* CONTENT */}
-
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -211,8 +189,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
             flexGrow: 1
           }}
         >
-
-          {/* CATEGORY */}
 
           <View style={styles.categoryCard}>
 
@@ -245,8 +221,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
 
           </View>
 
-          {/* CATEGORY TYPE */}
-
           <AppDropdown
             label="Category Type"
             value={categoryType}
@@ -254,8 +228,6 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
             options={categoryTypeOptions}
             placeholder="Select type"
           />
-
-          {/* ACCOUNT */}
 
           <AppDropdown
             label="Select Account"
@@ -265,60 +237,110 @@ const CreateTransactionScreen = ({ route, navigation }: any) => {
             placeholder="Choose account"
           />
 
-          {/* DATE */}
-
           <Text style={styles.label}>Date</Text>
 
-          <TouchableOpacity
-            style={[
-              styles.input,
-              {
+          <AppDatePicker
+            value={date}
+            onChange={setDate}
+          />
+
+          <View
+            style={{
                 flexDirection: "row",
+                alignItems: "center",
                 justifyContent: "space-between",
-                alignItems: "center"
-              }
-            ]}
-            onPress={openCalendar}
-          >
+                marginTop: 10,
+                marginBottom: 10
+            }}
+            >
+  <Text style={styles.label}>Quantity</Text>
 
-            <Text>{date.toDateString()}</Text>
+  <TouchableOpacity
+    onPress={() => setUseQuantity(!useQuantity)}
+    style={{
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: "#3985F7",
+      justifyContent: "center",
+      alignItems: "center"
+    }}
+  >
+    <Ionicons
+      name={useQuantity ? "remove" : "add"}
+      size={18}
+      color="#fff"
+    />
+  </TouchableOpacity>
+</View>
 
-            <Ionicons
-              name="calendar-outline"
-              size={18}
-              color="#6B7280"
-            />
+          {useQuantity && (
 
-          </TouchableOpacity>
+            <>
 
-          {/* AMOUNT */}
+              {/* <Text style={styles.label}>
+                Quantity
+              </Text> */}
 
+              <TextInput
+                style={styles.amountInput}
+                keyboardType="number-pad"
+                placeholder="1"
+                value={quantity}
+                onChangeText={(text) => {
+
+                  const cleaned = text.replace(/[^0-9]/g, "");
+                  setQuantity(cleaned);
+
+                }}
+              />
+
+              <Text style={styles.label}>
+                Total Amount
+              </Text>
+
+              <View style={styles.amountInput}>
+                <Text style={{ fontSize: 18, fontWeight: "600" }}>
+                  ₹ {totalAmount || 0}
+                </Text>
+              </View>
+
+            </>
+
+          )}
+
+             
           <Text style={styles.label}>
             Amount
           </Text>
 
           <TextInput
             style={styles.amountInput}
-            keyboardType="numeric"
+            keyboardType="number-pad"
             placeholder="₹ 0"
-            value={amount}
-            onChangeText={setAmount}
+            value={unitPrice}
+            onChangeText={(text) => {
+
+              const cleaned = text.replace(/[^0-9.]/g, "");
+
+              const parts = cleaned.split(".");
+              if (parts.length > 2) return;
+
+              setUnitPrice(cleaned);
+
+            }}
           />
 
-          {/* NOTE */}
-
           <Text style={styles.label}>
-            Note
+            Description
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Add note"
+            placeholder="Add Description"
             value={note}
             onChangeText={setNote}
           />
-
-          {/* SAVE BUTTON */}
 
           <TouchableOpacity
             style={styles.saveButton}
