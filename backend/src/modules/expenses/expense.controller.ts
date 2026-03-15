@@ -10,6 +10,12 @@ import {
 } from "./expense.validation";
 import { CategoryType } from "@prisma/client";
 import { ErrorCode } from "../../lib/errors/error-codes";
+import {
+  generateCategoryIcon,
+  generateCategoryColor,
+} from "../../lib/utils/category-icon.util";
+import { detectCategoryType } from "../../lib/utils/category-type.util";
+
 
 export class CategoryController {
 
@@ -17,32 +23,40 @@ export class CategoryController {
   /* CREATE CATEGORY */
   /* ------------------------------------------------ */
 
-  static async createCategory(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const userId = req.user!.userId;
+static async createCategory(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = req.user!.userId;
 
-      const data = createCategorySchema.parse(req.body);
+    const data = createCategorySchema.parse(req.body);
 
-      const category = await CategoryRepository.createCategory({
-        name: data.name,
-        type: data.type as CategoryType,
-        userId,
-        icon: data.icon,
-        color: data.color,
-      });
+    const name = data.name.trim();
 
-      res.status(201).json({
-        success: true,
-        data: category,
-      });
-    } catch (error) {
-      next(error);
-    }
+    const type = detectCategoryType(name);
+
+    const icon = generateCategoryIcon(name);
+
+    const color = generateCategoryColor(name);
+
+    const category = await CategoryRepository.createCategory({
+      name,
+      type,
+      userId,
+      icon,
+      color,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: category,
+    });
+  } catch (error) {
+    next(error);
   }
+}
 
   /* ------------------------------------------------ */
   /* CREATE SUBCATEGORY */

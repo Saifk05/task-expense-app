@@ -47,11 +47,11 @@ export class AccountController {
     next: NextFunction
   ) => {
     try {
-      const accounts = await AccountService.getAccounts(req.user!.userId);
+      const result = await AccountService.getAccounts(req.user!.userId);
 
       res.status(200).json({
         success: true,
-        data: accounts,
+        data: result,
       });
     } catch (error) {
       next(error);

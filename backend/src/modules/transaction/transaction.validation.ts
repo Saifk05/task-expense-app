@@ -117,14 +117,12 @@ export const transactionQuerySchema = z.object({
 
   endDate: z.string().datetime().optional(),
 
-  minAmount: z
-    .number()
-    .min(0)
+    minAmount: z
+    .preprocess((val) => Number(val), z.number().min(0))
     .optional(),
 
-  maxAmount: z
-    .number()
-    .min(0)
+    maxAmount: z
+    .preprocess((val) => Number(val), z.number().min(0))
     .optional(),
 
   search: z
@@ -133,11 +131,11 @@ export const transactionQuerySchema = z.object({
     .max(100)
     .optional(),
 
-  limit: z
-    .number()
-    .int()
-    .min(1)
-    .max(100)
+    limit: z
+    .preprocess(
+        (val) => Number(val),
+        z.number().int().min(1).max(100)
+    )
     .optional(),
 
   cursor: z

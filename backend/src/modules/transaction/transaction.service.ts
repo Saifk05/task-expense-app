@@ -8,6 +8,8 @@ import {
 } from "./transaction.types";
 import { ErrorCode } from "../../lib/errors/error-codes";
 import { TransactionType } from "@prisma/client";
+import { detectTransactionCategory } from "../../lib/utils/merchant-category.util";
+
 
 export class TransactionService {
 
@@ -42,47 +44,116 @@ export class TransactionService {
       input.totalAmount
     );
 
+    let categoryId = input.categoryId;
+
+if (!categoryId && input.title) {
+
+  const detection = detectTransactionCategory(input.title);
+
+  if (detection) {
+
+    const parentCategory = await prisma.category.findFirst({
+      where: {
+        userId: input.userId,
+        name: detection.category,
+        parentId: null,
+      },
+    });
+
+    if (parentCategory) {
+
+      if (detection.subCategory) {
+
+        const subCategory = await prisma.category.findFirst({
+          where: {
+            parentId: parentCategory.id,
+            name: detection.subCategory,
+          },
+        });
+
+        if (subCategory) {
+          categoryId = subCategory.id;
+        }
+
+      } else {
+        categoryId = parentCategory.id;
+      }
+
+    }
+
+  }
+
+}
+
     const result = await prisma.$transaction(async (tx) => {
 
-      const transaction = await tx.transaction.create({
-        data: {
-          userId: input.userId,
-          accountId: input.accountId,
-          categoryId: input.categoryId,
-          title: input.title,
-          description: input.description,
-          type: input.type,
-          quantity: input.quantity,
-          unitPrice: input.unitPrice,
-          totalAmount,
-          transactionDate: input.transactionDate,
+  const account = await tx.account.findUnique({
+    where: { id: input.accountId },
+    select: { balance: true }
+  });
+
+  if (!account) {
+    throw new Error(ErrorCode.ACCOUNT_NOT_FOUND);
+  }
+
+  /* ------------------------------------ */
+  /* PREVENT NEGATIVE BALANCE */
+  /* ------------------------------------ */
+
+    if (
+    input.type === TransactionType.EXPENSE &&
+    account.balance.toNumber() < totalAmount
+    ) {
+    throw new Error("INSUFFICIENT_BALANCE");
+    }
+
+  /* ------------------------------------ */
+  /* CREATE TRANSACTION */
+  /* ------------------------------------ */
+
+  const transaction = await tx.transaction.create({
+    data: {
+      userId: input.userId,
+      accountId: input.accountId,
+      categoryId: categoryId,
+      title: input.title,
+      description: input.description,
+      type: input.type,
+      quantity: input.quantity,
+      unitPrice: input.unitPrice,
+      totalAmount,
+      transactionDate: input.transactionDate,
+    },
+  });
+
+  /* ------------------------------------ */
+  /* UPDATE ACCOUNT BALANCE */
+  /* ------------------------------------ */
+
+  if (input.type === TransactionType.EXPENSE) {
+    await tx.account.update({
+      where: { id: input.accountId },
+      data: {
+        balance: {
+          decrement: totalAmount,
         },
-      });
-
-      if (input.type === TransactionType.EXPENSE) {
-        await tx.account.update({
-          where: { id: input.accountId },
-          data: {
-            balance: {
-              decrement: totalAmount,
-            },
-          },
-        });
-      }
-
-      if (input.type === TransactionType.INCOME) {
-        await tx.account.update({
-          where: { id: input.accountId },
-          data: {
-            balance: {
-              increment: totalAmount,
-            },
-          },
-        });
-      }
-
-      return transaction;
+      },
     });
+  }
+
+  if (input.type === TransactionType.INCOME) {
+    await tx.account.update({
+      where: { id: input.accountId },
+      data: {
+        balance: {
+          increment: totalAmount,
+        },
+      },
+    });
+  }
+
+  return transaction;
+});
 
     return result;
   }

@@ -153,8 +153,8 @@ model Category {
   type      CategoryType
   parentId  String?
 
-  icon      String?     // ✅ ADD THIS
-  color     String?     // ✅ ADD THIS
+  icon      String?     
+  color     String?   
 
   parent    Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[]  @relation("CategoryHierarchy")

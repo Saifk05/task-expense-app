@@ -68,6 +68,42 @@ export class AccountRepository {
     });
   }
 
+    /* ------------------------------------------------ */
+/* ACCOUNT SUMMARY */
+/* ------------------------------------------------ */
+
+static async getAccountSummary(userId: string) {
+
+  const activeAccounts = await prisma.account.count({
+    where: {
+      userId,
+      isActive: true,
+    },
+  });
+
+  const inactiveAccounts = await prisma.account.count({
+    where: {
+      userId,
+      isActive: false,
+    },
+  });
+
+  const totalBalanceResult = await prisma.account.aggregate({
+    where: {
+      userId,
+      isActive: true,
+    },
+    _sum: {
+      balance: true,
+    },
+  });
+
+  return {
+    totalActiveAccounts: activeAccounts,
+    totalInactiveAccounts: inactiveAccounts,
+    totalBalance: totalBalanceResult._sum.balance ?? 0,
+  };
+}
   /* ------------------------------------------------ */
   /* DELETE ACCOUNT (SOFT DELETE) */
   /* ------------------------------------------------ */
@@ -81,3 +117,6 @@ export class AccountRepository {
     });
   }
 }
+
+
+

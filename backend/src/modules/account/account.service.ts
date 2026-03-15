@@ -42,8 +42,16 @@ export class AccountService {
   /* ------------------------------------------------ */
 
   static async getAccounts(userId: string) {
-    return AccountRepository.getAccounts(userId);
-  }
+
+  const accounts = await AccountRepository.getAccounts(userId);
+
+  const summary = await AccountRepository.getAccountSummary(userId);
+
+  return {
+    accounts,
+    summary,
+  };
+}
 
   /* ------------------------------------------------ */
   /* UPDATE ACCOUNT */
