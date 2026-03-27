@@ -546,6 +546,7 @@ async updateAccount(
     name?: string;
     type?: string;
     balance?: number;
+    isActive?: boolean;
   }
 ) {
   const response = await api.patch(`/accounts/${id}`, data);

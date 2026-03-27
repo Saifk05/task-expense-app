@@ -5,10 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
+  // Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
+import { showSuccess, showError, showWarning } from "../../../utils/notification.util"; // adjust path
 import styles from "./CreateAccountScreen.styles";
 import ApiService from "../../../services/api.service";
 import AppDropdown from "../../../component/AppDropdown";
@@ -31,15 +31,22 @@ const CreateAccountScreen = ({ navigation }: any) => {
 
   const handleCreateAccount = async () => {
 
-    if (!name.trim()) {
-      Alert.alert("Validation", "Account name is required");
-      return;
-    }
+  if (!name.trim()) {
+    showWarning("Validation", "Account name is required");
+    return;
+  }
 
-    if (!type) {
-      Alert.alert("Validation", "Please select account type");
-      return;
-    }
+  if (!type) {
+    showWarning("Validation", "Please select account type");
+    return;
+  }
+
+  const parsedBalance = Number(balance);
+
+  if (balance && isNaN(parsedBalance)) {
+    showWarning("Validation", "Enter a valid balance");
+    return;
+  }
 
     try {
 
@@ -51,13 +58,13 @@ const CreateAccountScreen = ({ navigation }: any) => {
         balance: Number(balance || 0),
       });
 
-      Alert.alert("Success", "Account created successfully");
+      showSuccess("Account Created", "Your account was added successfully");
 
       navigation.goBack();
 
     } catch (error) {
       console.log("Create account error:", error);
-      Alert.alert("Error", "Failed to create account");
+      showError("Error", "Failed to create account");
     } finally {
       setLoading(false);
     }
